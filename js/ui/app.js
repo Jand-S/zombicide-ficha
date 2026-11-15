@@ -2,10 +2,10 @@
 import { SOBREVIVENTES } from '../dados/sobreviventes.js';
 import { HABILIDADES } from '../dados/habilidades.js';
 import { EQUIPAMENTOS } from '../dados/equipamentos.js';
-import { criarEstado } from '../estado.js';
+import { criarEstado, CHAVE } from '../estado.js';
 import { escolher } from '../regras.js';
 import {
-  telaInicial, ferir, curar, gastarAcao, devolverAcao, novoTurno, mudarXp, mudarObjetivo, resumo,
+  telaInicial, desenharComRecuo, avisoDeSalvar, ferir, curar, gastarAcao, devolverAcao, novoTurno, mudarXp, mudarObjetivo, resumo,
 } from './logica.js';
 import {
   telaFicha, telaMesa, telaPartidas, telaEscolher, folhaEscolha, folhaConfig, folhaCartas, listaCartas,
@@ -24,7 +24,7 @@ const TEMPO_SEGURAR = 500;
 let storage = null;
 try { storage = globalThis.localStorage ?? null; } catch { /* bloqueado */ }
 
-const api = criarEstado(storage ?? undefined);
+const api = criarEstado(storage ?? undefined, { habilidades: HABILIDADES, sobreviventes: SOB });
 const prefs = criarPrefs(storage);
 const app = document.getElementById('app');
 const folha = document.getElementById('folha');
@@ -87,28 +87,38 @@ function render() {
   if (tela === 'ficha' && !f) tela = p ? 'mesa' : (api.estado.partidas.length ? 'partidas' : 'escolher');
   if (tela === 'mesa' && !p) tela = api.estado.partidas.length ? 'partidas' : 'escolher';
 
-  let html = '';
   if (sel && (tela !== 'ficha' || sel.fichaId !== f?.id)) sel = null;
-  if (tela === 'ficha') {
-    prefs.lembrarFicha(p.id, f.id);
-    html = telaFicha({
-      ficha: f, sobrevivente: SOB[f.sobreviventeId], habilidades: HABILIDADES,
-      fichasDaMesa: p.fichas, sobreviventes: SOB, equipamentos: EQ, selecionado: sel,
-    });
-  } else if (tela === 'mesa') {
-    html = telaMesa({ partida: p, sobreviventes: SOB, fichaAtiva: api.estado.fichaAtiva });
-  } else if (tela === 'partidas') {
-    html = telaPartidas({ partidas: api.estado.partidas, partidaAtiva: api.estado.partidaAtiva });
-  } else {
-    html = telaEscolher({ sobreviventes: SOBREVIVENTES, habilidades: HABILIDADES, temPartida: Boolean(p) });
+  const r = desenharComRecuo(tela, (t) => htmlDaTela(t, f, p));
+  tela = r.tela;
+  if (r.erro) {
+    console.error(r.erro);
+    sel = null;
+    // no primeiro render o toast ainda não existe (let mais abaixo): avisa no próximo tique
+    setTimeout(() => toast(`Erro ao abrir a tela · ${tela === 'mesa' ? 'voltei para a mesa' : 'voltei ao início'}`,
+      { desfazer: false, sangue: true, iconeId: 'i-caveira' }), 0);
   }
   document.body.dataset.tela = tela;
-  app.innerHTML = html;
+  app.innerHTML = r.html;
   if (foco != null && foco >= 0) app.querySelectorAll('[data-acao]')[foco]?.focus({ preventScroll: true });
   if (folhaAtual === 'config' && f) folha.innerHTML = conteudoConfig();
 }
 
+function htmlDaTela(t, f, p) {
+  if (t === 'ficha') {
+    const html = telaFicha({
+      ficha: f, sobrevivente: SOB[f.sobreviventeId], habilidades: HABILIDADES,
+      fichasDaMesa: p.fichas, sobreviventes: SOB, equipamentos: EQ, selecionado: sel,
+    });
+    prefs.lembrarFicha(p.id, f.id);
+    return html;
+  }
+  if (t === 'mesa') return telaMesa({ partida: p, sobreviventes: SOB, fichaAtiva: api.estado.fichaAtiva });
+  if (t === 'partidas') return telaPartidas({ partidas: api.estado.partidas, partidaAtiva: api.estado.partidaAtiva });
+  return telaEscolher({ sobreviventes: SOBREVIVENTES, habilidades: HABILIDADES, temPartida: Boolean(p) });
+}
+
 function ir(nova) {
+  fecharToast();
   tela = nova;
   fecharFolha();
   render();
@@ -162,6 +172,13 @@ function toast(msg, { desfazer = true, sangue = false, iconeId = 'i-xp', aoDesfa
   timerToast = setTimeout(() => { toastEl.classList.remove('visivel'); }, desfazer ? TEMPO_DESFAZER : 2000);
 }
 
+/** Fecha o toast (e o Desfazer dele): trocar de ficha ou de tela não pode desfazer a ficha errada. */
+function fecharToast() {
+  clearTimeout(timerToast);
+  desfazerExtra = null;
+  toastEl.classList.remove('visivel');
+}
+
 function vibrar() {
   try { navigator.vibrate?.(12); } catch { /* sem suporte */ }
 }
@@ -177,9 +194,11 @@ function mudar(fn, msg, opcoesToast) {
   if (!f) return null;
   const nova = api.alterarFicha(f.id, fn);
   if (!nova) return null;
+  if (nova === f) return nova; // não mudou nada: sem toast nem Desfazer
   vibrar();
   render();
-  toast(typeof msg === 'function' ? msg(nova) : msg, opcoesToast);
+  const texto = typeof msg === 'function' ? msg(nova) : msg;
+  toast(avisoDeSalvar(texto, api.pendente), api.pendente ? { ...opcoesToast, sangue: true } : opcoesToast);
   return nova;
 }
 
@@ -447,7 +466,7 @@ function tratarClique(ev) {
       fecharFolha();
       tela = api.fichaAtual() ? 'ficha' : 'mesa';
       render();
-      toast(`${nome} saiu da mesa`, { iconeId: 'i-mesa' });
+      toast(avisoDeSalvar(`${nome} saiu da mesa`, api.pendente), { iconeId: 'i-mesa', sangue: api.pendente });
       break;
     }
     case 'desfazer': {
@@ -485,7 +504,8 @@ function tratarClique(ev) {
       if (!f) break;
       vibrar();
       ir('ficha');
-      toast(`${SOB[f.sobreviventeId]?.nome ?? 'Sobrevivente'} · entrou na mesa`, { desfazer: false, iconeId: 'i-mesa' });
+      toast(avisoDeSalvar(`${SOB[f.sobreviventeId]?.nome ?? 'Sobrevivente'} · entrou na mesa`, api.pendente),
+        { desfazer: false, iconeId: 'i-mesa', sangue: api.pendente });
       break;
     }
     default: break;
@@ -554,8 +574,17 @@ async function aplicarWakeLock() {
 }
 aplicarWakeLock();
 
+// Só grava ao sair se houver mudança pendente: gravar o estado inteiro apagava o que outra aba salvou.
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden') api.salvar();
+  if (document.visibilityState === 'hidden' && api.pendente) api.salvar();
   aplicarWakeLock();
 });
-window.addEventListener('pagehide', () => api.salvar());
+window.addEventListener('pagehide', () => { if (api.pendente) api.salvar(); });
+
+// Outra aba gravou: relê e redesenha (a ficha aberta aqui continua a mesma).
+window.addEventListener('storage', (ev) => {
+  if (ev.key !== CHAVE && ev.key !== null) return;
+  api.recarregar();
+  if (sel && !api.fichaAtual()) sel = null;
+  render();
+});

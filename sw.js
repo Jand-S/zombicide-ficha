@@ -2,7 +2,7 @@
 // Responde do cache na hora e atualiza o cache pela rede em segundo plano (a versão nova vale na
 // próxima abertura). Ao mudar a lista ou os arquivos, suba VERSAO para trocar o cache.
 // O gate (tools/checar.mjs) confere que ARQUIVOS cobre tudo que o site usa.
-const VERSAO = 'v1';
+const VERSAO = 'v2';
 const PREFIXO = 'zombicide-ficha-';
 const CACHE = PREFIXO + VERSAO;
 

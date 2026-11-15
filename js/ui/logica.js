@@ -30,6 +30,28 @@ export function telaInicial(api) {
   return { tela: 'escolher' };
 }
 
+/**
+ * Desenha `tela`; se lançar erro, tenta Mesa, Partidas e por fim a escolha (que não lê ficha nenhuma),
+ * para o app nunca ficar preso em 'carregando'. Devolve { tela, html, erro } (erro: o primeiro, ou null).
+ */
+export function desenharComRecuo(tela, desenhar) {
+  const ordem = [...new Set([tela, 'mesa', 'partidas', 'escolher'])];
+  let erro = null;
+  for (const t of ordem) {
+    try {
+      return { tela: t, html: desenhar(t), erro };
+    } catch (e) {
+      erro ??= e;
+    }
+  }
+  return { tela: 'escolher', html: '', erro };
+}
+
+/** Texto do toast depois de uma mudança; se ela não foi gravada (storage cheio), avisa antes. */
+export function avisoDeSalvar(msg, pendente) {
+  return pendente ? `Não foi possível salvar · ${msg}` : msg;
+}
+
 // ---------- vida ----------
 
 export function ferir(ficha, max) {

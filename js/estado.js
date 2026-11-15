@@ -2,6 +2,9 @@
 // O armazenamento é injetado (criarEstado(storage)): no navegador é o localStorage,
 // nos testes um objeto em memória com getItem/setItem/removeItem.
 // Nada aqui pode derrubar o app: JSON corrompido, storage cheio ou ausente viram estado vazio ou `false`.
+// Catálogo opcional (criarEstado(storage, { habilidades, sobreviventes })): com ele, escolhas com hid que não
+// existe são descartadas e fichas de sobrevivente que não existe são recusadas (link, backup ou storage).
+import { vidaMax, LIMITE_VIDA, LIMITE_ACOES } from './regras.js';
 
 export const CHAVE = 'zombicide-ficha:v1';
 export const CHAVE_CORROMPIDO = 'zombicide-ficha:v1:corrompido';
@@ -12,6 +15,8 @@ const PREFIXO_LINK = '#f=';
 const VERSAO_LINK = 1;
 
 const TAM = { maos: 2, mochila: 3, extra: 2 };
+// Faixas sãs para os números da ficha (dado ruim não vira milhões de pips).
+export const LIMITES = Object.freeze({ xp: 999, voltas: 50, objetivos: 99, acoes: LIMITE_ACOES, ferimentos: LIMITE_VIDA });
 
 function gerarId() {
   const c = globalThis.crypto;
@@ -22,6 +27,22 @@ function gerarId() {
 function inteiro(n, min = 0) {
   const v = Math.trunc(Number(n));
   return Number.isFinite(v) ? Math.max(min, v) : min;
+}
+
+function faixa(n, max) {
+  return Math.min(max, inteiro(n));
+}
+
+/** `colecao` é um objeto { [id]: ... } ou uma lista de ids / de { id }. */
+function temId(colecao, id) {
+  if (Array.isArray(colecao)) return colecao.some((x) => x === id || x?.id === id);
+  return Object.hasOwn(colecao, id);
+}
+
+function sobreviventeDe(catalogo, id) {
+  const c = catalogo?.sobreviventes;
+  if (!c) return undefined;
+  return Array.isArray(c) ? c.find((x) => x?.id === id) : (Object.hasOwn(c, id) ? c[id] : undefined);
 }
 
 function ehObjeto(x) {
@@ -61,30 +82,40 @@ export function fichaVazia(sobreviventeId, id = gerarId()) {
   };
 }
 
-/** Preenche o que faltar e corrige tipos; devolve null se não der para salvar a ficha. */
-export function normalizarFicha(f) {
+/**
+ * Preenche o que faltar, corrige tipos e põe os números em faixas sãs; devolve null se não der para salvar a
+ * ficha. Com `catalogo` ({ habilidades, sobreviventes }), descarta escolhas desconhecidas e recusa sobrevivente
+ * que não existe.
+ */
+export function normalizarFicha(f, catalogo) {
   if (!ehObjeto(f) || typeof f.sobreviventeId !== 'string' || !f.sobreviventeId) return null;
+  if (catalogo?.sobreviventes && !temId(catalogo.sobreviventes, f.sobreviventeId)) return null;
+  const conhecida = (h) => !catalogo?.habilidades || temId(catalogo.habilidades, h);
+  const escolhas = (lista) => listaDeTexto(lista).filter(conhecida);
   const gratis = {};
   if (ehObjeto(f.acoesGastas?.gratis)) {
-    for (const [k, v] of Object.entries(f.acoesGastas.gratis)) gratis[k] = inteiro(v);
+    for (const [k, v] of Object.entries(f.acoesGastas.gratis)) gratis[k] = faixa(v, LIMITES.acoes);
   }
   const inv = ehObjeto(f.inventario) ? f.inventario : {};
-  return {
+  const nova = {
     id: typeof f.id === 'string' && f.id ? f.id : gerarId(),
     sobreviventeId: f.sobreviventeId,
-    xp: inteiro(f.xp),
-    voltas: inteiro(f.voltas),
-    escolhas: { laranja: listaDeTexto(f.escolhas?.laranja), vermelho: listaDeTexto(f.escolhas?.vermelho) },
-    ferimentos: inteiro(f.ferimentos),
-    acoesGastas: { normais: inteiro(f.acoesGastas?.normais), gratis },
+    xp: faixa(f.xp, LIMITES.xp),
+    voltas: faixa(f.voltas, LIMITES.voltas),
+    escolhas: { laranja: escolhas(f.escolhas?.laranja), vermelho: escolhas(f.escolhas?.vermelho) },
+    ferimentos: faixa(f.ferimentos, LIMITES.ferimentos),
+    acoesGastas: { normais: faixa(f.acoesGastas?.normais, LIMITES.acoes), gratis },
     inventario: {
       maos: normalizarSlots(inv.maos, TAM.maos),
       mochila: normalizarSlots(inv.mochila, TAM.mochila),
       extra: normalizarSlots(inv.extra, TAM.extra),
     },
-    objetivos: inteiro(f.objetivos),
+    objetivos: faixa(f.objetivos, LIMITES.objetivos),
     ultrared: Boolean(f.ultrared),
   };
+  const sob = sobreviventeDe(catalogo, nova.sobreviventeId);
+  if (sob) nova.ferimentos = Math.min(nova.ferimentos, vidaMax(nova, sob));
+  return nova;
 }
 
 function estadoVazio() {
@@ -95,7 +126,7 @@ function estadoVazio() {
  * Leva um estado de qualquer versão anterior (ou lixo) para a versão atual.
  * v0 (sem `versao`): fichas sem `voltas` e outros campos faltando ganham os valores padrão.
  */
-export function migrar(estadoAntigo) {
+export function migrar(estadoAntigo, catalogo) {
   if (!ehObjeto(estadoAntigo)) return estadoVazio();
   const partidas = [];
   const idsFicha = new Set();
@@ -103,7 +134,7 @@ export function migrar(estadoAntigo) {
     if (!ehObjeto(p)) continue;
     const fichas = [];
     for (const f of Array.isArray(p.fichas) ? p.fichas : []) {
-      const n = normalizarFicha(f);
+      const n = normalizarFicha(f, catalogo);
       if (!n) continue;
       if (idsFicha.has(n.id)) n.id = gerarId();
       idsFicha.add(n.id);
@@ -160,7 +191,7 @@ function compactar(f) {
   ];
 }
 
-function expandir(a) {
+function expandir(a, catalogo) {
   if (!Array.isArray(a) || a[0] !== VERSAO_LINK) return null;
   const [, sobreviventeId, xp, voltas, laranja, vermelho, ferimentos, normais, gratis, slots, objetivos, ultrared] = a;
   const s = Array.isArray(slots) ? slots.map(expandirSlot) : [];
@@ -169,7 +200,7 @@ function expandir(a) {
     acoesGastas: { normais, gratis: ehObjeto(gratis) ? gratis : {} },
     inventario: { maos: s.slice(0, 2), mochila: s.slice(2, 5), extra: s.slice(5, 7) },
     objetivos, ultrared: ultrared === 1,
-  });
+  }, catalogo);
 }
 
 /** Link de uma ficha. Se passar do limite do QR, encurta os textos livres mais longos. */
@@ -189,12 +220,12 @@ export function linkDaFicha(ficha) {
 }
 
 /** Ficha de um link (`#f=...`, com ou sem `#`), ou null se o link não for válido. */
-export function fichaDoLink(hash) {
+export function fichaDoLink(hash, catalogo) {
   if (typeof hash !== 'string') return null;
   const i = hash.indexOf('f=');
   if (i < 0) return null;
   try {
-    return expandir(JSON.parse(deBase64url(hash.slice(i + 2).trim())));
+    return expandir(JSON.parse(deBase64url(hash.slice(i + 2).trim())), catalogo);
   } catch {
     return null;
   }
@@ -220,9 +251,75 @@ function storagePadrao() {
 
 // ---------- estado ----------
 
-export function criarEstado(storage = storagePadrao()) {
+export function criarEstado(storage = storagePadrao(), catalogo = null) {
   let estado = estadoVazio();
   let pilha = []; // desfazer: { tipo: 'alterar' | 'remover', partidaId, ficha, indice }
+  // Mudanças desta aba ainda não gravadas. Ao salvar, elas vão por cima do que está no storage
+  // (que outra aba pode ter mudado), ficha a ficha.
+  let sujo = false;
+  let tudo = false; // importarJSON: o estado inteiro vem desta aba
+  const mexidas = new Set(); // ids de ficha criada, alterada ou removida aqui
+  const partidasNovas = new Set();
+
+  function marcar(fichaId) {
+    sujo = true;
+    if (fichaId) mexidas.add(fichaId);
+  }
+
+  function limparPendencias() {
+    sujo = false;
+    tudo = false;
+    mexidas.clear();
+    partidasNovas.clear();
+  }
+
+  /** O que está gravado agora (talvez por outra aba), ou null se não der para ler. */
+  function lerGravado() {
+    try {
+      const bruto = storage.getItem(CHAVE);
+      return bruto == null ? estadoVazio() : migrar(JSON.parse(bruto), catalogo);
+    } catch {
+      return null;
+    }
+  }
+
+  /** `base` (gravado) com as mudanças pendentes desta aba por cima; a ficha aberta continua a desta aba. */
+  function mesclar(base) {
+    if (!base || tudo) return estado;
+    for (const id of partidasNovas) {
+      const lp = estado.partidas.find((p) => p.id === id);
+      if (lp && !base.partidas.some((p) => p.id === id)) base.partidas.push(lp);
+    }
+    for (const fid of mexidas) {
+      let lp = null;
+      let idxLocal = -1;
+      for (const p of estado.partidas) {
+        idxLocal = p.fichas.findIndex((f) => f.id === fid);
+        if (idxLocal >= 0) { lp = p; break; }
+      }
+      const ficha = lp?.fichas[idxLocal] ?? null;
+      let deBase = null;
+      let posBase = -1;
+      for (const bp of base.partidas) {
+        posBase = bp.fichas.findIndex((f) => f.id === fid);
+        if (posBase >= 0) { deBase = bp; bp.fichas.splice(posBase, 1); break; }
+      }
+      if (!ficha) continue; // removida nesta aba
+      let bp = base.partidas.find((p) => p.id === lp.id);
+      if (!bp) {
+        bp = { id: lp.id, nome: lp.nome, fichas: [], atualizadaEm: lp.atualizadaEm };
+        base.partidas.push(bp);
+      }
+      bp.fichas.splice(bp === deBase ? posBase : Math.min(idxLocal, bp.fichas.length), 0, ficha);
+      bp.atualizadaEm = Math.max(bp.atualizadaEm, lp.atualizadaEm);
+    }
+    const pa = base.partidas.find((p) => p.id === estado.partidaAtiva);
+    if (pa) {
+      base.partidaAtiva = pa.id;
+      base.fichaAtiva = pa.fichas.some((f) => f.id === estado.fichaAtiva) ? estado.fichaAtiva : (pa.fichas[0]?.id ?? null);
+    }
+    return base;
+  }
 
   const api = {
     ultimoErro: null,
@@ -240,7 +337,7 @@ export function criarEstado(storage = storagePadrao()) {
         estado = estadoVazio();
       } else {
         try {
-          estado = migrar(JSON.parse(bruto));
+          estado = migrar(JSON.parse(bruto), catalogo);
         } catch (e) {
           api.ultimoErro = e;
           try { storage.setItem(CHAVE_CORROMPIDO, bruto); } catch { /* sem espaço: segue */ }
@@ -248,19 +345,36 @@ export function criarEstado(storage = storagePadrao()) {
         }
       }
       pilha = [];
+      limparPendencias();
       return estado;
     },
 
-    /** Grava agora. Devolve false (sem lançar) se o storage estiver cheio ou bloqueado. */
+    /** Há mudança desta aba ainda não gravada (ex.: o storage estava cheio). */
+    get pendente() { return sujo; },
+
+    /**
+     * Grava as mudanças pendentes (sem mudança, não grava nada). Relê o storage e põe por cima, ficha a ficha,
+     * o que esta aba mudou, para não apagar o que outra aba gravou. Devolve false (sem lançar) se o storage
+     * estiver cheio ou bloqueado; aí a mudança segue pendente.
+     */
     salvar() {
+      if (!sujo) return true;
+      estado = mesclar(tudo ? null : lerGravado());
       try {
         storage.setItem(CHAVE, JSON.stringify(estado));
         api.ultimoErro = null;
+        limparPendencias();
         return true;
       } catch (e) {
         api.ultimoErro = e;
         return false;
       }
+    },
+
+    /** Relê o storage (outra aba gravou), mantendo as mudanças pendentes e a ficha aberta nesta aba. */
+    recarregar() {
+      estado = mesclar(lerGravado());
+      return estado;
     },
 
     partidaAtual() {
@@ -281,6 +395,8 @@ export function criarEstado(storage = storagePadrao()) {
       estado.partidas.push(p);
       estado.partidaAtiva = p.id;
       estado.fichaAtiva = null;
+      partidasNovas.add(p.id);
+      marcar();
       api.salvar();
       return p;
     },
@@ -290,8 +406,9 @@ export function criarEstado(storage = storagePadrao()) {
       if (!p) return null;
       estado.partidaAtiva = p.id;
       estado.fichaAtiva = p.fichas[0]?.id ?? null;
+      marcar();
       api.salvar();
-      return p;
+      return api.partidaAtual() ?? p; // a versão já mesclada com o storage
     },
 
     /** Deixa ativa a ficha `id` (e a partida dela). Devolve a ficha, ou null se não existir. */
@@ -301,8 +418,9 @@ export function criarEstado(storage = storagePadrao()) {
         if (!f) continue;
         estado.partidaAtiva = p.id;
         estado.fichaAtiva = f.id;
+        marcar();
         api.salvar();
-        return f;
+        return api.fichaAtual() ?? f; // a versão já mesclada com o storage
       }
       return null;
     },
@@ -315,6 +433,7 @@ export function criarEstado(storage = storagePadrao()) {
       p.fichas.push(f);
       p.atualizadaEm = Date.now();
       estado.fichaAtiva = f.id;
+      marcar(f.id);
       api.salvar();
       return f;
     },
@@ -327,6 +446,7 @@ export function criarEstado(storage = storagePadrao()) {
         empilhar({ tipo: 'remover', partidaId: p.id, indice: i, ficha: f });
         p.atualizadaEm = Date.now();
         if (estado.fichaAtiva === id) estado.fichaAtiva = p.fichas[0]?.id ?? null;
+        marcar(id);
         api.salvar();
         return true;
       }
@@ -341,12 +461,15 @@ export function criarEstado(storage = storagePadrao()) {
         const antes = p.fichas[i];
         const copia = structuredClone(antes);
         const r = fn(copia);
-        const nova = normalizarFicha(ehObjeto(r) ? r : copia);
+        const nova = normalizarFicha(ehObjeto(r) ? r : copia, catalogo);
         if (!nova) return null;
         nova.id = antes.id;
+        // não mudou nada (ex.: −1 XP com XP 0): sem Desfazer e sem gravar
+        if (JSON.stringify(nova) === JSON.stringify(antes)) return antes;
         p.fichas[i] = nova;
         p.atualizadaEm = Date.now();
         empilhar({ tipo: 'alterar', partidaId: p.id, ficha: antes });
+        marcar(id);
         api.salvar();
         return nova;
       }
@@ -369,6 +492,7 @@ export function criarEstado(storage = storagePadrao()) {
           estado.partidaAtiva = p.id;
         }
         p.atualizadaEm = Date.now();
+        marcar(passo.ficha.id);
         api.salvar();
         return passo.ficha;
       }
@@ -389,13 +513,14 @@ export function criarEstado(storage = storagePadrao()) {
 
     /** Lê um `#f=` e põe a ficha (com id novo) na partida ativa. Devolve a ficha ou null. */
     importarLink(hash) {
-      const f = fichaDoLink(hash);
+      const f = fichaDoLink(hash, catalogo);
       if (!f) return null;
       f.id = gerarId();
       const p = api.partidaAtual() ?? api.novaPartida();
       p.fichas.push(f);
       p.atualizadaEm = Date.now();
       estado.fichaAtiva = f.id;
+      marcar(f.id);
       api.salvar();
       return f;
     },
@@ -414,13 +539,16 @@ export function criarEstado(storage = storagePadrao()) {
         return false;
       }
       if (!ehObjeto(dados) || !Array.isArray(dados.partidas)) return false;
-      estado = migrar(dados);
+      estado = migrar(dados, catalogo);
       pilha = [];
+      limparPendencias();
+      tudo = true;
+      marcar();
       api.salvar();
       return true;
     },
 
-    migrar,
+    migrar: (estadoAntigo) => migrar(estadoAntigo, catalogo),
   };
 
   function empilhar(passo) {

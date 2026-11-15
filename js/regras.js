@@ -15,6 +15,10 @@ export const ACOES_BASE = 3;
 export const VIDA_POR_TIPO = Object.freeze({ adulto: 3, kid: 2 });
 // hids aceitos para Hoard (o nome final vem do leg `dados`).
 export const HIDS_HOARD = Object.freeze(['hoard', 'acumulador']);
+// Tetos para dado ruim (link ou storage com hid inventado) não gerar milhões de pips.
+export const LIMITE_POR_HID = 5; // o N de "+N Action" / "Starts with N Health" que conta, no máximo
+export const LIMITE_ACOES = 20; // ações por tipo, no máximo
+export const LIMITE_VIDA = 20;
 
 // Padrões de hid com efeito numérico (kebab-case, como nos exemplos do contrato).
 const RE_ACAO = /^mais-(\d+)-acao$/;
@@ -26,6 +30,11 @@ const TOPO = NIVEIS[NIVEIS.length - 1].min; // 43: onde o Ultrared dá a volta
 function inteiro(n) {
   const v = Math.trunc(Number(n));
   return Number.isFinite(v) ? v : 0;
+}
+
+// N de um hid ("mais-N-acao"), no máximo LIMITE_POR_HID.
+function porHid(txt) {
+  return Math.min(LIMITE_POR_HID, inteiro(txt));
 }
 
 function indiceNivel(id) {
@@ -126,8 +135,13 @@ export function aplicarXp(ficha, delta, { ultrared, sobrevivente, habilidades } 
   let xp = inteiro(ficha?.xp) + inteiro(delta);
   let voltas = Math.max(0, inteiro(ficha?.voltas));
   if (comUltrared) {
-    while (xp >= TOPO) { xp -= TOPO; voltas += 1; }
-    while (xp < 0 && voltas > 0) { xp += TOPO; voltas -= 1; }
+    // conta direto (sem laço): um XP enorme vindo de dado ruim não trava o app
+    if (xp >= TOPO) { voltas += Math.floor(xp / TOPO); xp %= TOPO; }
+    if (xp < 0 && voltas > 0) {
+      const k = Math.min(voltas, Math.ceil(-xp / TOPO));
+      xp += k * TOPO;
+      voltas -= k;
+    }
   }
   if (xp < 0) xp = 0;
 
@@ -148,9 +162,9 @@ export function acoesDoTurno(ficha, sobrevivente) {
   const gratis = {};
   for (const hid of habilidadesAtivas(ficha, sobrevivente)) {
     let m = RE_ACAO.exec(hid);
-    if (m) { normais += Number(m[1]); continue; }
+    if (m) { normais = Math.min(LIMITE_ACOES, normais + porHid(m[1])); continue; }
     m = RE_ACAO_GRATIS.exec(hid);
-    if (m) gratis[m[2]] = (gratis[m[2]] ?? 0) + Number(m[1]);
+    if (m) gratis[m[2]] = Math.min(LIMITE_ACOES, (gratis[m[2]] ?? 0) + porHid(m[1]));
   }
   return { normais, gratis };
 }
@@ -163,9 +177,9 @@ export function vidaMax(ficha, sobrevivente) {
   let vida = base;
   for (const hid of habilidadesAtivas(ficha, sobrevivente)) {
     const m = RE_VIDA.exec(hid);
-    if (m) vida = Math.max(vida, Number(m[1]));
+    if (m) vida = Math.max(vida, porHid(m[1]));
   }
-  return vida;
+  return Math.min(LIMITE_VIDA, vida);
 }
 
 /** Hoard ativo: libera os 2 slots extras (que contam como mochila). */

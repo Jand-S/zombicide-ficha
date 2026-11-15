@@ -260,7 +260,7 @@ export function telaMesa({ partida, sobreviventes, fichaAtiva }) {
         </span>
       </span>
       <span class="cartao-ficha__dados">
-        <span>${icone('i-coracao', 'icone--p')}${r.vida}/${r.vidaMax}</span>
+        <span${TIPO[s?.tipo] ? '' : ' title="Vida a conferir no ID Card"'}>${icone('i-coracao', 'icone--p')}${r.vida}/${r.vidaMax}${TIPO[s?.tipo] ? '' : ' <small class="texto-suave">a conferir</small>'}</span>
         <span>${icone('i-xp', 'icone--p')}${r.xp}</span>
       </span>
     </button>`;
