@@ -3,7 +3,7 @@
 import { esc, icone, barraPerigo, NOME_NIVEL, NOME_ACAO } from './dom.js';
 import { resumo, iniciais } from './logica.js';
 import {
-  slotsDaFicha, nomeDoSlot, nomeNoSlot, atributosCarta, buscarCartas, mesmoSlot, NOME_TIPO_CARTA, MAX_TEXTO,
+  slotsDaFicha, nomeDoSlot, nomeNoSlot, atributosCarta, perfisDaCarta, buscarCartas, mesmoSlot, NOME_TIPO_CARTA, MAX_TEXTO,
 } from './inventario.js';
 
 const TIPO = { adulto: 'Adulto', kid: 'Kid' };
@@ -170,8 +170,8 @@ const ICONE_TIPO = { corpo: 'i-corpo', distancia: 'i-mira', ambos: 'i-mira', ite
 function statsCarta(e) {
   if (!e || e.tipo === 'item') return '';
   const quais = ['dados', 'precisao', 'dano'];
-  const itens = atributosCarta(e).filter((a) => quais.includes(a.id))
-    .map((a) => `<span title="${a.rotulo}">${icone(a.icone)}${esc(a.valor)}</span>`).join('');
+  const itens = perfisDaCarta(e).map(({ carta }) => atributosCarta(carta).filter((a) => quais.includes(a.id))
+    .map((a) => `<span title="${a.rotulo}">${icone(a.icone)}${esc(a.valor)}</span>`).join('')).join('<span aria-hidden="true">/</span>');
   return `<span class="slot__stats">${itens}</span>`;
 }
 
@@ -234,7 +234,8 @@ export function listaCartas({ cartas, termo }) {
   if (!achadas.length) return '<p class="texto-suave">Nenhuma carta com esse nome. Use o texto livre abaixo.</p>';
   return achadas.map((e) => {
     const tags = [NOME_TIPO_CARTA[e.tipo], e.inicial ? 'Inicial' : '', e.epico ? 'Épico' : ''].filter(Boolean).join(' · ');
-    const attrs = e.tipo === 'item' ? '' : atributosCarta(e).map((a) => `<span title="${a.rotulo}">${icone(a.icone, 'icone--p')}${esc(a.rotulo)} ${esc(a.valor)}</span>`).join('');
+    const attrs = e.tipo === 'item' ? '' : perfisDaCarta(e).map(({ rotulo, carta }) => (rotulo ? `<span><b>${esc(rotulo)}</b></span>` : '')
+      + atributosCarta(carta).map((a) => `<span title="${a.rotulo}">${icone(a.icone, 'icone--p')}${esc(a.rotulo)} ${esc(a.valor)}</span>`).join('')).join('');
     return `<button class="carta-opcao${e.epico ? ' carta-opcao--epico' : ''}" type="button" data-acao="por-carta" data-equip="${esc(e.id)}">
       ${miniCarta(e, { lazy: true })}<span class="carta-opcao__nome">${esc(e.nome)}${tags ? `<small>${esc(tags)}</small>` : ''}</span>
       ${attrs ? `<span class="carta-opcao__attrs">${attrs}</span>` : ''}</button>`;

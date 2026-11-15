@@ -141,6 +141,14 @@ export function atributosCarta(e) {
   ];
 }
 
+/** Perfis de ataque da carta: um só (rotulo null) ou um por modo, para cartas como a Gunblade. */
+export function perfisDaCarta(e) {
+  if (Array.isArray(e?.perfis) && e.perfis.length) {
+    return e.perfis.map((p) => ({ rotulo: NOME_TIPO_CARTA[p.tipo] ?? p.tipo, carta: { ...e, ...p } }));
+  }
+  return [{ rotulo: null, carta: e }];
+}
+
 export const NOME_TIPO_CARTA = { corpo: 'Corpo a corpo', distancia: 'Distância', ambos: 'Corpo e distância', item: 'Item' };
 
 /** Nome que o slot mostra: o da carta, o texto livre, ou null se vazio. */

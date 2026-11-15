@@ -91,7 +91,7 @@ test('equipamentos: ids únicos e soma de qtd igual a 63', () => {
 
 test('equipamentos: arma confirmada tem tipo, alcance e barulho; corpo a corpo tem alcance 0-0', () => {
   const armas = EQUIPAMENTOS.filter((e) => e.confirmado && (e.tipo === 'corpo' || e.tipo === 'distancia'));
-  assert.equal(armas.length, 16);
+  assert.equal(armas.length, 23);
   for (const e of armas) {
     assert.ok(Array.isArray(e.alcance), e.id);
     assert.equal(typeof e.dual, 'boolean', e.id);
@@ -110,7 +110,17 @@ test('equipamentos: todos os campos do contrato, com valores válidos ou null', 
   const campos = ['id', 'nome', 'tipo', 'dados', 'precisao', 'dano', 'alcance', 'dual', 'abrePorta', 'barulhento',
     'epico', 'inicial', 'qtd', 'fonte', 'confirmado'];
   for (const e of EQUIPAMENTOS) {
-    assert.deepEqual(Object.keys(e).sort(), [...campos].sort(), e.id);
+    const opcionais = ['imagem', 'perfis'];
+    assert.deepEqual(Object.keys(e).filter((k) => !opcionais.includes(k)).sort(), [...campos].sort(), e.id);
+    assert.ok(e.imagem === undefined || typeof e.imagem === 'string', `${e.id}.imagem`);
+    if (e.perfis !== undefined) {
+      assert.ok(Array.isArray(e.perfis) && e.perfis.length === 2 && e.tipo === 'ambos', `${e.id}.perfis`);
+      for (const p of e.perfis) {
+        assert.ok(['corpo', 'distancia'].includes(p.tipo), `${e.id}.perfis.tipo`);
+        for (const n of ['dados', 'precisao', 'dano']) assert.ok(Number.isInteger(p[n]), `${e.id}.perfis.${n}`);
+        assert.equal(typeof p.barulhento, 'boolean', `${e.id}.perfis.barulhento`);
+      }
+    }
     assert.ok(typeof e.nome === 'string' || (e.nome === null && !e.confirmado), e.id);
     assert.ok([null, 'corpo', 'distancia', 'ambos', 'item'].includes(e.tipo), e.id);
     assert.ok([null, 'silencioso', 'barulhento'].includes(e.abrePorta), e.id);
