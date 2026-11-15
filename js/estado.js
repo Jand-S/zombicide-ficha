@@ -464,6 +464,8 @@ export function criarEstado(storage = storagePadrao(), catalogo = null) {
         const nova = normalizarFicha(ehObjeto(r) ? r : copia, catalogo);
         if (!nova) return null;
         nova.id = antes.id;
+        // não mudou nada (ex.: −1 XP com XP 0): sem Desfazer e sem gravar
+        if (JSON.stringify(nova) === JSON.stringify(antes)) return antes;
         p.fichas[i] = nova;
         p.atualizadaEm = Date.now();
         empilhar({ tipo: 'alterar', partidaId: p.id, ficha: antes });

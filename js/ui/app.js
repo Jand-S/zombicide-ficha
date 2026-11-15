@@ -5,7 +5,7 @@ import { EQUIPAMENTOS } from '../dados/equipamentos.js';
 import { criarEstado, CHAVE } from '../estado.js';
 import { escolher } from '../regras.js';
 import {
-  telaInicial, desenharComRecuo, ferir, curar, gastarAcao, devolverAcao, novoTurno, mudarXp, mudarObjetivo, resumo,
+  telaInicial, desenharComRecuo, avisoDeSalvar, ferir, curar, gastarAcao, devolverAcao, novoTurno, mudarXp, mudarObjetivo, resumo,
 } from './logica.js';
 import {
   telaFicha, telaMesa, telaPartidas, telaEscolher, folhaEscolha, folhaConfig, folhaCartas, listaCartas,
@@ -118,6 +118,7 @@ function htmlDaTela(t, f, p) {
 }
 
 function ir(nova) {
+  fecharToast();
   tela = nova;
   fecharFolha();
   render();
@@ -171,6 +172,13 @@ function toast(msg, { desfazer = true, sangue = false, iconeId = 'i-xp', aoDesfa
   timerToast = setTimeout(() => { toastEl.classList.remove('visivel'); }, desfazer ? TEMPO_DESFAZER : 2000);
 }
 
+/** Fecha o toast (e o Desfazer dele): trocar de ficha ou de tela não pode desfazer a ficha errada. */
+function fecharToast() {
+  clearTimeout(timerToast);
+  desfazerExtra = null;
+  toastEl.classList.remove('visivel');
+}
+
 function vibrar() {
   try { navigator.vibrate?.(12); } catch { /* sem suporte */ }
 }
@@ -186,9 +194,11 @@ function mudar(fn, msg, opcoesToast) {
   if (!f) return null;
   const nova = api.alterarFicha(f.id, fn);
   if (!nova) return null;
+  if (nova === f) return nova; // não mudou nada: sem toast nem Desfazer
   vibrar();
   render();
-  toast(typeof msg === 'function' ? msg(nova) : msg, opcoesToast);
+  const texto = typeof msg === 'function' ? msg(nova) : msg;
+  toast(avisoDeSalvar(texto, api.pendente), api.pendente ? { ...opcoesToast, sangue: true } : opcoesToast);
   return nova;
 }
 
@@ -456,7 +466,7 @@ function tratarClique(ev) {
       fecharFolha();
       tela = api.fichaAtual() ? 'ficha' : 'mesa';
       render();
-      toast(`${nome} saiu da mesa`, { iconeId: 'i-mesa' });
+      toast(avisoDeSalvar(`${nome} saiu da mesa`, api.pendente), { iconeId: 'i-mesa', sangue: api.pendente });
       break;
     }
     case 'desfazer': {
@@ -494,7 +504,8 @@ function tratarClique(ev) {
       if (!f) break;
       vibrar();
       ir('ficha');
-      toast(`${SOB[f.sobreviventeId]?.nome ?? 'Sobrevivente'} · entrou na mesa`, { desfazer: false, iconeId: 'i-mesa' });
+      toast(avisoDeSalvar(`${SOB[f.sobreviventeId]?.nome ?? 'Sobrevivente'} · entrou na mesa`, api.pendente),
+        { desfazer: false, iconeId: 'i-mesa', sangue: api.pendente });
       break;
     }
     default: break;

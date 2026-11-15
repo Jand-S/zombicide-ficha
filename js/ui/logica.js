@@ -47,6 +47,11 @@ export function desenharComRecuo(tela, desenhar) {
   return { tela: 'escolher', html: '', erro };
 }
 
+/** Texto do toast depois de uma mudança; se ela não foi gravada (storage cheio), avisa antes. */
+export function avisoDeSalvar(msg, pendente) {
+  return pendente ? `Não foi possível salvar · ${msg}` : msg;
+}
+
 // ---------- vida ----------
 
 export function ferir(ficha, max) {
