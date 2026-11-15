@@ -254,6 +254,72 @@ function storagePadrao() {
 export function criarEstado(storage = storagePadrao(), catalogo = null) {
   let estado = estadoVazio();
   let pilha = []; // desfazer: { tipo: 'alterar' | 'remover', partidaId, ficha, indice }
+  // Mudanças desta aba ainda não gravadas. Ao salvar, elas vão por cima do que está no storage
+  // (que outra aba pode ter mudado), ficha a ficha.
+  let sujo = false;
+  let tudo = false; // importarJSON: o estado inteiro vem desta aba
+  const mexidas = new Set(); // ids de ficha criada, alterada ou removida aqui
+  const partidasNovas = new Set();
+
+  function marcar(fichaId) {
+    sujo = true;
+    if (fichaId) mexidas.add(fichaId);
+  }
+
+  function limparPendencias() {
+    sujo = false;
+    tudo = false;
+    mexidas.clear();
+    partidasNovas.clear();
+  }
+
+  /** O que está gravado agora (talvez por outra aba), ou null se não der para ler. */
+  function lerGravado() {
+    try {
+      const bruto = storage.getItem(CHAVE);
+      return bruto == null ? estadoVazio() : migrar(JSON.parse(bruto), catalogo);
+    } catch {
+      return null;
+    }
+  }
+
+  /** `base` (gravado) com as mudanças pendentes desta aba por cima; a ficha aberta continua a desta aba. */
+  function mesclar(base) {
+    if (!base || tudo) return estado;
+    for (const id of partidasNovas) {
+      const lp = estado.partidas.find((p) => p.id === id);
+      if (lp && !base.partidas.some((p) => p.id === id)) base.partidas.push(lp);
+    }
+    for (const fid of mexidas) {
+      let lp = null;
+      let idxLocal = -1;
+      for (const p of estado.partidas) {
+        idxLocal = p.fichas.findIndex((f) => f.id === fid);
+        if (idxLocal >= 0) { lp = p; break; }
+      }
+      const ficha = lp?.fichas[idxLocal] ?? null;
+      let deBase = null;
+      let posBase = -1;
+      for (const bp of base.partidas) {
+        posBase = bp.fichas.findIndex((f) => f.id === fid);
+        if (posBase >= 0) { deBase = bp; bp.fichas.splice(posBase, 1); break; }
+      }
+      if (!ficha) continue; // removida nesta aba
+      let bp = base.partidas.find((p) => p.id === lp.id);
+      if (!bp) {
+        bp = { id: lp.id, nome: lp.nome, fichas: [], atualizadaEm: lp.atualizadaEm };
+        base.partidas.push(bp);
+      }
+      bp.fichas.splice(bp === deBase ? posBase : Math.min(idxLocal, bp.fichas.length), 0, ficha);
+      bp.atualizadaEm = Math.max(bp.atualizadaEm, lp.atualizadaEm);
+    }
+    const pa = base.partidas.find((p) => p.id === estado.partidaAtiva);
+    if (pa) {
+      base.partidaAtiva = pa.id;
+      base.fichaAtiva = pa.fichas.some((f) => f.id === estado.fichaAtiva) ? estado.fichaAtiva : (pa.fichas[0]?.id ?? null);
+    }
+    return base;
+  }
 
   const api = {
     ultimoErro: null,
@@ -279,19 +345,36 @@ export function criarEstado(storage = storagePadrao(), catalogo = null) {
         }
       }
       pilha = [];
+      limparPendencias();
       return estado;
     },
 
-    /** Grava agora. Devolve false (sem lançar) se o storage estiver cheio ou bloqueado. */
+    /** Há mudança desta aba ainda não gravada (ex.: o storage estava cheio). */
+    get pendente() { return sujo; },
+
+    /**
+     * Grava as mudanças pendentes (sem mudança, não grava nada). Relê o storage e põe por cima, ficha a ficha,
+     * o que esta aba mudou, para não apagar o que outra aba gravou. Devolve false (sem lançar) se o storage
+     * estiver cheio ou bloqueado; aí a mudança segue pendente.
+     */
     salvar() {
+      if (!sujo) return true;
+      estado = mesclar(tudo ? null : lerGravado());
       try {
         storage.setItem(CHAVE, JSON.stringify(estado));
         api.ultimoErro = null;
+        limparPendencias();
         return true;
       } catch (e) {
         api.ultimoErro = e;
         return false;
       }
+    },
+
+    /** Relê o storage (outra aba gravou), mantendo as mudanças pendentes e a ficha aberta nesta aba. */
+    recarregar() {
+      estado = mesclar(lerGravado());
+      return estado;
     },
 
     partidaAtual() {
@@ -312,6 +395,8 @@ export function criarEstado(storage = storagePadrao(), catalogo = null) {
       estado.partidas.push(p);
       estado.partidaAtiva = p.id;
       estado.fichaAtiva = null;
+      partidasNovas.add(p.id);
+      marcar();
       api.salvar();
       return p;
     },
@@ -321,8 +406,9 @@ export function criarEstado(storage = storagePadrao(), catalogo = null) {
       if (!p) return null;
       estado.partidaAtiva = p.id;
       estado.fichaAtiva = p.fichas[0]?.id ?? null;
+      marcar();
       api.salvar();
-      return p;
+      return api.partidaAtual() ?? p; // a versão já mesclada com o storage
     },
 
     /** Deixa ativa a ficha `id` (e a partida dela). Devolve a ficha, ou null se não existir. */
@@ -332,8 +418,9 @@ export function criarEstado(storage = storagePadrao(), catalogo = null) {
         if (!f) continue;
         estado.partidaAtiva = p.id;
         estado.fichaAtiva = f.id;
+        marcar();
         api.salvar();
-        return f;
+        return api.fichaAtual() ?? f; // a versão já mesclada com o storage
       }
       return null;
     },
@@ -346,6 +433,7 @@ export function criarEstado(storage = storagePadrao(), catalogo = null) {
       p.fichas.push(f);
       p.atualizadaEm = Date.now();
       estado.fichaAtiva = f.id;
+      marcar(f.id);
       api.salvar();
       return f;
     },
@@ -358,6 +446,7 @@ export function criarEstado(storage = storagePadrao(), catalogo = null) {
         empilhar({ tipo: 'remover', partidaId: p.id, indice: i, ficha: f });
         p.atualizadaEm = Date.now();
         if (estado.fichaAtiva === id) estado.fichaAtiva = p.fichas[0]?.id ?? null;
+        marcar(id);
         api.salvar();
         return true;
       }
@@ -378,6 +467,7 @@ export function criarEstado(storage = storagePadrao(), catalogo = null) {
         p.fichas[i] = nova;
         p.atualizadaEm = Date.now();
         empilhar({ tipo: 'alterar', partidaId: p.id, ficha: antes });
+        marcar(id);
         api.salvar();
         return nova;
       }
@@ -400,6 +490,7 @@ export function criarEstado(storage = storagePadrao(), catalogo = null) {
           estado.partidaAtiva = p.id;
         }
         p.atualizadaEm = Date.now();
+        marcar(passo.ficha.id);
         api.salvar();
         return passo.ficha;
       }
@@ -427,6 +518,7 @@ export function criarEstado(storage = storagePadrao(), catalogo = null) {
       p.fichas.push(f);
       p.atualizadaEm = Date.now();
       estado.fichaAtiva = f.id;
+      marcar(f.id);
       api.salvar();
       return f;
     },
@@ -447,6 +539,9 @@ export function criarEstado(storage = storagePadrao(), catalogo = null) {
       if (!ehObjeto(dados) || !Array.isArray(dados.partidas)) return false;
       estado = migrar(dados, catalogo);
       pilha = [];
+      limparPendencias();
+      tudo = true;
+      marcar();
       api.salvar();
       return true;
     },

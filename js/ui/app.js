@@ -2,7 +2,7 @@
 import { SOBREVIVENTES } from '../dados/sobreviventes.js';
 import { HABILIDADES } from '../dados/habilidades.js';
 import { EQUIPAMENTOS } from '../dados/equipamentos.js';
-import { criarEstado } from '../estado.js';
+import { criarEstado, CHAVE } from '../estado.js';
 import { escolher } from '../regras.js';
 import {
   telaInicial, desenharComRecuo, ferir, curar, gastarAcao, devolverAcao, novoTurno, mudarXp, mudarObjetivo, resumo,
@@ -563,8 +563,17 @@ async function aplicarWakeLock() {
 }
 aplicarWakeLock();
 
+// Só grava ao sair se houver mudança pendente: gravar o estado inteiro apagava o que outra aba salvou.
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden') api.salvar();
+  if (document.visibilityState === 'hidden' && api.pendente) api.salvar();
   aplicarWakeLock();
 });
-window.addEventListener('pagehide', () => api.salvar());
+window.addEventListener('pagehide', () => { if (api.pendente) api.salvar(); });
+
+// Outra aba gravou: relê e redesenha (a ficha aberta aqui continua a mesma).
+window.addEventListener('storage', (ev) => {
+  if (ev.key !== CHAVE && ev.key !== null) return;
+  api.recarregar();
+  if (sel && !api.fichaAtual()) sel = null;
+  render();
+});
