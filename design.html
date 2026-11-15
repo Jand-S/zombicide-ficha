@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#121110">
+<title>Design da ficha · Zombicide</title>
+<link rel="stylesheet" href="css/tema.css">
+<style>
+  /* só do catálogo */
+  .cat-cabeca { padding: 28px var(--gutter) 8px; max-width: 640px; margin: 0 auto; }
+  .cat-cabeca h1 { font-size: 52px; letter-spacing: .05em; }
+  .cat-cabeca h1 span { color: var(--sangue-vivo); }
+  .cat-cabeca p { color: var(--texto-suave); margin-top: 6px; }
+  .cat-sec { display: grid; gap: 12px; margin-top: 18px; }
+  .cat-sec > h2 { font-size: 30px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+  .cat-sec > h2 small { font-family: var(--fonte-texto); font-size: 15px; font-weight: 600; letter-spacing: .08em; color: var(--texto-suave); text-transform: uppercase; }
+  .cores { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .cor { display: grid; gap: 2px; padding: 10px 12px; min-height: 76px; align-content: end; font-weight: 700; clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); }
+  .cor code { font: 600 14px/1 var(--fonte-texto); letter-spacing: .06em; opacity: .9; }
+  .icones { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; }
+  .icones figure { margin: 0; display: grid; justify-items: center; gap: 6px; padding: 12px 4px 8px; background: var(--papel); border: 1px solid var(--borda); }
+  .icones figcaption { font-size: 13px; font-weight: 600; color: var(--texto-suave); overflow-wrap: anywhere; text-align: center; }
+  .icones .tamanhos { display: flex; align-items: end; gap: 6px; color: var(--texto); }
+  .tipos p + p { margin-top: 6px; }
+  .demo-telefone { position: relative; overflow: hidden; border: 2px solid var(--borda); background: rgb(0 0 0 / .35); padding-top: 90px; }
+  .demo-telefone::after { content: "tela do app"; position: absolute; top: 34px; left: 0; right: 0; text-align: center; font-family: var(--fonte-titulo); font-size: 22px; letter-spacing: .1em; color: var(--borda-forte); }
+  #ficha { margin-top: 34px; }
+  #ficha .topo { position: relative; }
+</style>
+</head>
+<body>
+
+<header class="cat-cabeca">
+  <h1>Ficha do <span>7º</span></h1>
+  <p>Catálogo de componentes do tema (css/tema.css). Ícones e texturas próprios; nenhuma arte oficial.</p>
+</header>
+<div class="faixa-zebra"></div>
+
+<main class="pagina pilha">
+
+  <!-- ================= Cores ================= -->
+  <section class="cat-sec" aria-labelledby="t-cores">
+    <h2 id="t-cores">Cores <small>contraste AA</small></h2>
+    <div class="cores">
+      <div class="cor" style="background:var(--azul);color:var(--sobre-azul)">Azul<code>--azul</code></div>
+      <div class="cor" style="background:var(--amarelo);color:var(--sobre-amarelo)">Amarelo<code>--amarelo</code></div>
+      <div class="cor" style="background:var(--laranja);color:var(--sobre-laranja)">Laranja<code>--laranja</code></div>
+      <div class="cor" style="background:var(--vermelho);color:var(--sobre-vermelho)">Vermelho<code>--vermelho</code></div>
+      <div class="cor" style="background:var(--sangue);color:var(--sobre-sangue)">Sangue<code>--sangue</code></div>
+      <div class="cor" style="background:var(--aviso);color:var(--sobre-aviso)">Aviso<code>--aviso</code></div>
+      <div class="cor" style="background:var(--papel);color:var(--texto);box-shadow:inset 0 0 0 2px var(--borda)">Papel<code>--papel</code></div>
+      <div class="cor" style="background:var(--fundo);color:var(--texto-suave);box-shadow:inset 0 0 0 2px var(--borda)">Fundo<code>--fundo</code></div>
+    </div>
+    <div class="faixa-zebra faixa-zebra--sangue faixa-zebra--fina"></div>
+  </section>
+
+  <!-- ================= Tipografia ================= -->
+  <section class="cat-sec tipos" aria-labelledby="t-tipos">
+    <h2 id="t-tipos">Tipografia <small>Bebas Neue + Barlow Condensed</small></h2>
+    <div class="cartao">
+      <p style="font-family:var(--fonte-titulo);font-size:40px;line-height:1">Eles estão chegando</p>
+      <p class="rotulo">Rótulo · Nível · Mochila</p>
+      <p>Texto corrido em Barlow Condensed: largura estreita para caber muita coisa na tela do celular sem perder a leitura.</p>
+      <p class="texto-suave">Texto secundário, para dicas e valores que faltam confirmar.</p>
+    </div>
+  </section>
+
+  <!-- ================= Ícones ================= -->
+  <section class="cat-sec" aria-labelledby="t-icones">
+    <h2 id="t-icones">Ícones <small>24px · traço 2.5</small></h2>
+    <div class="icones">
+      <figure><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-mao"/></svg><figcaption>i-mao</figcaption></figure>
+      <figure><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-mochila"/></svg><figcaption>i-mochila</figcaption></figure>
+      <figure><svg class="icone" aria-hidden="true" style="fill:var(--sangue-vivo);color:var(--sangue-vivo)"><use href="assets/icones.svg#i-coracao"/></svg><figcaption>i-coracao</figcaption></figure>
+      <figure><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-caveira"/></svg><figcaption>i-caveira</figcaption></figure>
+      <figure><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-dado"/></svg><figcaption>i-dado</figcaption></figure>
+      <figure><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-bala"/></svg><figcaption>i-bala</figcaption></figure>
+      <figure><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-porta"/></svg><figcaption>i-porta</figcaption></figure>
+      <figure><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-barulho"/></svg><figcaption>i-barulho</figcaption></figure>
+      <figure><svg class="icone" aria-hidden="true" style="color:var(--aviso)"><use href="assets/icones.svg#i-xp"/></svg><figcaption>i-xp</figcaption></figure>
+      <figure><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-turno"/></svg><figcaption>i-turno</figcaption></figure>
+      <figure><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-desfazer"/></svg><figcaption>i-desfazer</figcaption></figure>
+      <figure><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-mesa"/></svg><figcaption>i-mesa</figcaption></figure>
+      <figure><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-compartilhar"/></svg><figcaption>i-compartilhar</figcaption></figure>
+      <figure><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-config"/></svg><figcaption>i-config</figcaption></figure>
+      <figure><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-objetivo"/></svg><figcaption>i-objetivo</figcaption></figure>
+      <figure><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-corpo"/></svg><figcaption>i-corpo</figcaption></figure>
+      <figure><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-mira"/></svg><figcaption>i-mira</figcaption></figure>
+      <figure><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-mais"/></svg><figcaption>i-mais</figcaption></figure>
+      <figure><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-menos"/></svg><figcaption>i-menos</figcaption></figure>
+      <figure><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-fechar"/></svg><figcaption>i-fechar</figcaption></figure>
+    </div>
+  </section>
+
+  <!-- ================= Botões ================= -->
+  <section class="cat-sec" aria-labelledby="t-botoes">
+    <h2 id="t-botoes">Botões <small>.btn · .btn-grande</small></h2>
+    <div class="linha">
+      <button class="btn" type="button">Padrão</button>
+      <button class="btn btn-sangue" type="button"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-caveira"/></svg>Ferir</button>
+      <button class="btn btn-aviso" type="button"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-mais"/></svg>XP</button>
+      <button class="btn btn-fantasma" type="button">Fantasma</button>
+      <button class="btn btn-icone" type="button" aria-label="Desfazer"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-desfazer"/></svg></button>
+      <button class="btn" type="button" disabled>Inativo</button>
+    </div>
+    <div class="linha">
+      <button class="btn" type="button" data-nivel="azul">Azul</button>
+      <button class="btn" type="button" data-nivel="amarelo">Amarelo</button>
+      <button class="btn" type="button" data-nivel="laranja">Laranja</button>
+      <button class="btn" type="button" data-nivel="vermelho">Vermelho</button>
+    </div>
+    <button class="btn btn-grande btn-sangue" type="button"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-turno"/></svg>Novo turno</button>
+  </section>
+
+  <!-- ================= Chips ================= -->
+  <section class="cat-sec" aria-labelledby="t-chips">
+    <h2 id="t-chips">Chips de nível <small>.chip-nivel</small></h2>
+    <div class="linha">
+      <span class="chip-nivel" data-nivel="azul"><span class="chip-nivel__nivel">Azul</span></span>
+      <span class="chip-nivel" data-nivel="amarelo"><span class="chip-nivel__nivel">Amarelo</span></span>
+      <span class="chip-nivel" data-nivel="laranja"><span class="chip-nivel__nivel">Laranja</span></span>
+      <span class="chip-nivel" data-nivel="vermelho"><span class="chip-nivel__nivel">Vermelho</span></span>
+    </div>
+    <div class="linha">
+      <span class="chip-nivel chip-nivel--bloqueado" data-nivel="vermelho"><svg class="icone icone--p" aria-hidden="true"><use href="assets/icones.svg#i-caveira"/></svg>Bloqueado (43 XP)</span>
+      <button class="chip-nivel chip-nivel--opcao" data-nivel="laranja" type="button">Opção para escolher</button>
+    </div>
+  </section>
+
+  <!-- ================= Vida e ações ================= -->
+  <section class="cat-sec" aria-labelledby="t-vida">
+    <h2 id="t-vida">Vida e ações <small>.coracao · .pip</small></h2>
+    <div class="cartao pilha">
+      <div class="linha">
+        <span class="rotulo">Vida</span>
+        <div class="vida">
+          <button class="coracao" type="button" aria-label="Vida 1: cheia"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-coracao"/></svg></button>
+          <button class="coracao coracao--ferido" type="button" aria-label="Vida 2: ferida"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-coracao"/></svg></button>
+          <button class="coracao coracao--extra" type="button" aria-label="Vida extra"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-coracao"/></svg></button>
+        </div>
+      </div>
+      <div class="linha">
+        <span class="rotulo">Ações</span>
+        <div class="pips">
+          <button class="pip" type="button" aria-label="Ação disponível"></button>
+          <button class="pip pip--gasta" type="button" aria-label="Ação gasta"></button>
+          <button class="pip pip--gratis" type="button" aria-label="Ação grátis"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-mais"/></svg></button>
+          <button class="pip pip--gratis pip--gasta" type="button" aria-label="Ação grátis gasta"></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Barra de perigo ================= -->
+  <section class="cat-sec" aria-labelledby="t-barra">
+    <h2 id="t-barra">Barra de perigo <small>.barra-perigo</small></h2>
+    <div class="cartao">
+      <div class="barra-perigo" style="--xp: 0" role="meter" aria-label="Adrenalina" aria-valuemin="0" aria-valuemax="43" aria-valuenow="0">
+        <div class="barra-perigo__trilho">
+          <span class="zona" data-nivel="azul"></span><span class="zona" data-nivel="amarelo"></span><span class="zona" data-nivel="laranja"></span><span class="zona" data-nivel="vermelho"></span>
+          <span class="barra-perigo__marcador"><b>0</b></span>
+        </div>
+        <div class="barra-perigo__marcas" aria-hidden="true"><span style="--em:0">0</span><span style="--em:7">7</span><span style="--em:19">19</span><span style="--em:43">43</span></div>
+      </div>
+      <div class="barra-perigo barra-perigo--ultrared" style="--xp: 45" role="meter" aria-label="Adrenalina (Ultrared)" aria-valuemin="0" aria-valuemax="43" aria-valuenow="45">
+        <div class="barra-perigo__trilho">
+          <span class="zona" data-nivel="azul"></span><span class="zona" data-nivel="amarelo"></span><span class="zona" data-nivel="laranja"></span><span class="zona" data-nivel="vermelho"></span>
+          <span class="barra-perigo__marcador"><b>45</b></span>
+        </div>
+        <div class="barra-perigo__marcas" aria-hidden="true"><span style="--em:0">0</span><span style="--em:7">7</span><span style="--em:19">19</span><span style="--em:43">43</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Slots ================= -->
+  <section class="cat-sec" aria-labelledby="t-slots">
+    <h2 id="t-slots">Slots <small>.slot</small></h2>
+    <div class="grade-slots">
+      <button class="slot slot--epico" type="button">
+        <span class="slot__rotulo"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-mao"/></svg>Mão · épico</span>
+        <span class="slot__nome">Item épico</span>
+        <span class="slot__stats"><span><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-dado"/></svg>—</span><span><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-mira"/></svg>—</span></span>
+      </button>
+      <button class="slot slot--vazio" type="button">
+        <span class="slot__rotulo"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-mochila"/></svg>Mochila</span>
+        <span class="slot__nome"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-mais"/></svg>Vazio</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ================= Cartões ================= -->
+  <section class="cat-sec" aria-labelledby="t-cartoes">
+    <h2 id="t-cartoes">Cartões e retrato <small>.cartao · .retrato</small></h2>
+    <div class="cartao" data-nivel="laranja">
+      <h3 class="cartao__titulo"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-barulho"/></svg>Painel laranja<span class="cartao__extra">extra</span></h3>
+      <div class="linha">
+        <div class="retrato" data-nivel="azul"><span>AB</span></div>
+        <div class="retrato" data-nivel="amarelo"><span>CD</span></div>
+        <div class="retrato" data-nivel="vermelho"><span>EF</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Folha e toast ================= -->
+  <section class="cat-sec" aria-labelledby="t-folha">
+    <h2 id="t-folha">Folha de baixo e toast <small>.folha · .toast</small></h2>
+    <div class="demo-telefone">
+      <div class="folha folha--estatica" role="dialog" aria-labelledby="t-folha-demo">
+        <div class="folha__titulo"><span id="t-folha-demo">Nível laranja!</span><button class="btn btn-icone btn-fantasma" type="button" aria-label="Fechar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-fechar"/></svg></button></div>
+        <p class="texto-suave" style="margin-bottom:12px">Escolha 1 habilidade. A outra continua disponível no Ultrared.</p>
+        <div class="folha__opcoes">
+          <button class="chip-nivel chip-nivel--opcao" data-nivel="laranja" type="button">Opção laranja A (exemplo)</button>
+          <button class="chip-nivel chip-nivel--opcao" data-nivel="laranja" type="button">Opção laranja B (exemplo)</button>
+        </div>
+      </div>
+    </div>
+    <div class="toast toast--estatico" role="status">
+      <svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-xp"/></svg>
+      <span class="toast__texto"><b>+1 XP</b>Zumbi abatido</span>
+      <button class="btn btn-fantasma" type="button"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-desfazer"/></svg>Desfazer</button>
+    </div>
+    <div class="toast toast--estatico toast--sangue" role="status">
+      <svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-caveira"/></svg>
+      <span class="toast__texto"><b>Ferido</b>Resta 1 de vida</span>
+      <button class="btn btn-fantasma btn-icone" type="button" aria-label="Desfazer"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-desfazer"/></svg></button>
+    </div>
+  </section>
+</main>
+
+<div class="faixa-zebra"></div>
+
+<!-- ======================================================================
+     Ficha estática completa (exemplo visual; valores fictícios, sem dados do jogo)
+     ====================================================================== -->
+<section id="ficha" aria-label="Exemplo de ficha completa">
+  <header class="topo">
+    <button class="btn btn-icone btn-fantasma" type="button" aria-label="Partidas"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-mesa"/></svg></button>
+    <h2 class="topo__titulo">Ficha do <span>7º</span></h2>
+    <button class="btn btn-icone btn-fantasma" type="button" aria-label="Compartilhar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-compartilhar"/></svg></button>
+    <button class="btn btn-icone btn-fantasma" type="button" aria-label="Configurações"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-config"/></svg></button>
+  </header>
+
+  <div class="pagina pilha">
+    <!-- Sobrevivente -->
+    <article class="cartao" data-nivel="amarelo">
+      <div class="linha linha--nowrap" style="align-items:flex-start">
+        <div class="retrato" data-nivel="amarelo"><span>S7</span></div>
+        <div class="cresce pilha" style="gap:6px">
+          <h3 style="font-size:34px">Sobrevivente 7</h3>
+          <div class="linha" style="gap:6px">
+            <span class="chip-nivel" data-nivel="amarelo"><span class="chip-nivel__nivel">Amarelo</span></span>
+            <span class="rotulo">Adulto</span>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div class="numero" style="color:var(--aviso)">12</div>
+          <div class="rotulo">XP</div>
+        </div>
+      </div>
+      <div class="linha" style="margin-top:10px">
+        <span class="rotulo">Vida</span>
+        <div class="vida">
+          <button class="coracao" type="button" aria-label="Vida 1 de 3: cheia"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-coracao"/></svg></button>
+          <button class="coracao" type="button" aria-label="Vida 2 de 3: cheia"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-coracao"/></svg></button>
+          <button class="coracao coracao--ferido" type="button" aria-label="Vida 3 de 3: ferida"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-coracao"/></svg></button>
+        </div>
+      </div>
+    </article>
+
+    <!-- Adrenalina -->
+    <article class="cartao">
+      <h3 class="cartao__titulo"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-xp"/></svg>Adrenalina<span class="cartao__extra">próximo: 19</span></h3>
+      <div class="barra-perigo" style="--xp: 12" role="meter" aria-label="Adrenalina" aria-valuemin="0" aria-valuemax="43" aria-valuenow="12">
+        <div class="barra-perigo__trilho">
+          <span class="zona" data-nivel="azul"></span><span class="zona" data-nivel="amarelo"></span><span class="zona" data-nivel="laranja"></span><span class="zona" data-nivel="vermelho"></span>
+          <span class="barra-perigo__marcador"><b>12</b></span>
+        </div>
+        <div class="barra-perigo__marcas" aria-hidden="true"><span style="--em:0">0</span><span style="--em:7">7</span><span style="--em:19">19</span><span style="--em:43">43</span></div>
+      </div>
+      <div class="linha linha--nowrap" style="margin-top:12px">
+        <button class="btn btn-icone" type="button" aria-label="Tirar 1 XP"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-menos"/></svg></button>
+        <button class="btn btn-aviso cresce" type="button"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-mais"/></svg>1 XP</button>
+        <button class="btn btn-sangue cresce" type="button"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-mais"/></svg>5 XP</button>
+      </div>
+    </article>
+
+    <!-- Ações -->
+    <article class="cartao">
+      <h3 class="cartao__titulo"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-turno"/></svg>Ações<span class="cartao__extra">3 livres</span></h3>
+      <div class="pips">
+        <button class="pip pip--gasta" type="button" aria-label="Ação 1: gasta"></button>
+        <button class="pip pip--gasta" type="button" aria-label="Ação 2: gasta"></button>
+        <button class="pip" type="button" aria-label="Ação 3: disponível"></button>
+        <button class="pip" type="button" aria-label="Ação 4: disponível"></button>
+        <button class="pip pip--gratis" type="button" aria-label="Ação grátis: disponível"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-mais"/></svg></button>
+      </div>
+      <p class="texto-suave" style="margin:6px 0 12px;font-size:16px">4 ações + 1 grátis (exemplo)</p>
+      <div class="linha linha--nowrap">
+        <button class="btn btn-grande btn-sangue cresce" type="button"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-turno"/></svg>Novo turno</button>
+        <button class="btn btn-icone btn-grande" type="button" aria-label="Desfazer" style="width:64px;flex:none;padding:0"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-desfazer"/></svg></button>
+      </div>
+    </article>
+
+    <!-- Habilidades -->
+    <article class="cartao">
+      <h3 class="cartao__titulo"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-dado"/></svg>Habilidades</h3>
+      <div class="pilha" style="gap:8px">
+        <div class="linha" style="gap:6px"><span class="chip-nivel" data-nivel="azul">Habilidade azul (exemplo)</span></div>
+        <div class="linha" style="gap:6px"><span class="chip-nivel" data-nivel="amarelo">+1 Ação</span></div>
+        <div class="linha" style="gap:6px">
+          <span class="chip-nivel chip-nivel--bloqueado" data-nivel="laranja">Opção A</span>
+          <span class="chip-nivel chip-nivel--bloqueado" data-nivel="laranja">Opção B</span>
+        </div>
+        <div class="linha" style="gap:6px">
+          <span class="chip-nivel chip-nivel--bloqueado" data-nivel="vermelho">Opção A</span>
+          <span class="chip-nivel chip-nivel--bloqueado" data-nivel="vermelho">Opção B</span>
+          <span class="chip-nivel chip-nivel--bloqueado" data-nivel="vermelho">Opção C</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- Inventário -->
+    <article class="cartao">
+      <h3 class="cartao__titulo"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-mao"/></svg>Mãos</h3>
+      <div class="grade-slots">
+        <button class="slot" data-tipo="mao" type="button">
+          <span class="slot__rotulo"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-mira"/></svg>Distância</span>
+          <span class="slot__nome">Pistol</span>
+          <span class="slot__stats"><span><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-dado"/></svg>—</span><span><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-bala"/></svg>—</span><span><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-porta"/></svg>—</span></span>
+        </button>
+        <button class="slot" data-tipo="mao" type="button">
+          <span class="slot__rotulo"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-corpo"/></svg>Corpo a corpo</span>
+          <span class="slot__nome">Baseball Bat</span>
+          <span class="slot__stats"><span><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-dado"/></svg>—</span><span><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-barulho"/></svg>—</span></span>
+        </button>
+      </div>
+      <h3 class="cartao__titulo" style="margin-top:16px"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-mochila"/></svg>Mochila<span class="cartao__extra">1 de 3</span></h3>
+      <div class="grade-slots grade-slots--3">
+        <button class="slot" type="button">
+          <span class="slot__rotulo">Item</span>
+          <span class="slot__nome">Canned Food</span>
+        </button>
+        <button class="slot slot--vazio" type="button" aria-label="Mochila 2: vazia">
+          <span class="slot__rotulo">2</span>
+          <span class="slot__nome"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-mais"/></svg></span>
+        </button>
+        <button class="slot slot--vazio" type="button" aria-label="Mochila 3: vazia">
+          <span class="slot__rotulo">3</span>
+          <span class="slot__nome"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-mais"/></svg></span>
+        </button>
+      </div>
+    </article>
+
+    <!-- Objetivos -->
+    <article class="cartao">
+      <div class="linha linha--entre linha--nowrap">
+        <div class="linha linha--nowrap" style="gap:8px">
+          <svg class="icone icone--g" aria-hidden="true" style="color:var(--aviso)"><use href="assets/icones.svg#i-objetivo"/></svg>
+          <div><div class="rotulo">Objetivos</div><div class="texto-suave" style="font-size:15px">5 XP cada</div></div>
+        </div>
+        <div class="contador">
+          <button class="btn btn-icone" type="button" aria-label="Tirar objetivo"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-menos"/></svg></button>
+          <span class="numero">1</span>
+          <button class="btn btn-icone btn-aviso" type="button" aria-label="Pegar objetivo"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-mais"/></svg></button>
+        </div>
+      </div>
+    </article>
+
+    <button class="btn btn-grande btn-sangue" type="button"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-caveira"/></svg>Sofrer ferimento</button>
+
+    <div class="toast toast--estatico" role="status">
+      <svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-xp"/></svg>
+      <span class="toast__texto"><b>+1 XP</b>Zumbi abatido</span>
+      <button class="btn btn-fantasma" type="button"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-desfazer"/></svg>Desfazer</button>
+    </div>
+
+    <div class="demo-telefone">
+      <div class="folha folha--estatica" role="dialog" aria-labelledby="t-folha-ficha">
+        <div class="folha__titulo"><span id="t-folha-ficha">Trocar item</span><button class="btn btn-icone btn-fantasma" type="button" aria-label="Fechar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-fechar"/></svg></button></div>
+        <div class="folha__opcoes">
+          <button class="btn btn-grande" type="button"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-mochila"/></svg>Para a mochila</button>
+          <button class="btn btn-grande btn-fantasma" type="button"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-fechar"/></svg>Descartar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</body>
+</html>

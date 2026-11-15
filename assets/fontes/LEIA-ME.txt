@@ -1,0 +1,9 @@
+Fontes locais (woff2, subconjunto latin), todas sob a SIL Open Font License 1.1.
+
+- bebas-neue-400.woff2: Bebas Neue, (c) 2019 The Bebas Neue Project Authors.
+  Licença em LICENSE-bebas-neue.txt.
+- barlow-condensed-400/600/700.woff2: Barlow Condensed, (c) 2017 The Barlow Project Authors.
+  Licença em LICENSE-barlow-condensed.txt.
+
+Origem: pacotes @fontsource/bebas-neue@5.3.0 e @fontsource/barlow-condensed@5.3.0
+(cdn.jsdelivr.net/npm), que redistribuem os arquivos do Google Fonts.
