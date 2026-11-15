@@ -16,6 +16,8 @@ Status de um leg: `pendente` | `em_andamento` | `integrada` | `parado: <motivo>`
 - **`js/dados/equipamentos.js`:** `export const EQUIPAMENTOS = [{ id, nome, tipo: 'corpo'|'distancia'|'ambos'|'item',
   dados, precisao, dano, alcance: [min, max] | null, dual, abrePorta: 'silencioso'|'barulhento'|null, barulhento,
   epico, inicial, qtd, fonte, confirmado }]`. Os campos que não foram confirmados ficam `null`, nunca chutados.
+  - Opcionais: `imagem` (caminho relativo em assets/oficial/cartas/) e `perfis: [{ tipo, dados, precisao, dano, alcance, barulhento }]`, para
+    cartas `ambos` com dois modos (Gunblade, Ma's Shotgun). Nos sobreviventes também são opcionais `imagem` (retrato) e `card` (ID Card).
 - **`js/regras.js` (funções puras, sem DOM):**
   - `NIVEIS = [{ id: 'azul', min: 0 }, { id: 'amarelo', min: 7 }, { id: 'laranja', min: 19 }, { id: 'vermelho', min: 43 }]`
   - `nivelPorXp(xp)` devolve o id do nível.

@@ -10,7 +10,9 @@ docs/status.md.
 - Várias pessoas: cada uma no próprio celular, sem servidor. No mesmo aparelho dá para ter várias fichas (tela
   Mesa), e uma ficha passa para outro celular por link ou QR.
 - Itens: escolhidos de uma lista das cartas da 2E (com dados da arma), com texto livre para expansões.
-- Arte própria em SVG/CSS. Nada de arte ou logo da CMON. No rodapé: "ficha de fã, não oficial".
+- Visual próprio em SVG/CSS. Em 15/11/2026 o dono decidiu usar as imagens oficiais (retratos, ID Cards e cartas), sabendo do risco de
+  direito autoral. Elas ficam só em assets/oficial/ (com LEIA-ME e fontes). Apagar essa pasta faz o app voltar aos ícones próprios.
+  No rodapé: "ficha de fã, não oficial · imagens © CMON".
 
 ## Campos
 - Sobrevivente (nome, retrato SVG genérico, adulto ou Kid).

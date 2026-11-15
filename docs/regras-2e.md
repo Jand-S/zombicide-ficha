@@ -45,13 +45,12 @@ com o leg `dados`.
 ## Caixa base
 - 12 sobreviventes (6 adultos e 6 Kids): Ostara, Lili, Tiger Sam, Odin, Bunny G, Lou, Josh, Doug, Elle, Amy,
   Ned, Wanda.
-- Equipamentos, 63 cartas segundo o rulebook. A lista abaixo soma 62, e a 63ª carta ainda não foi identificada
-  (em js/dados ela aparece como `carta-nao-identificada`):
+- Kids (vida 2): Ostara, Lili, Tiger Sam, Odin, Bunny G e Lou. Adultos (vida 3): Josh, Doug, Elle, Amy, Ned e Wanda. Lido nos ID Cards.
+- Equipamentos, 63 cartas: as 62 abaixo e a carta de referência do Car (`car-referencia`).
   - Iniciais: Baseball Bat, Crowbar, Fire Axe, Pistol ×3.
   - Pilha: Aaahh!! ×4, Bag of Rice ×2, Canned Food ×2, Chainsaw ×2, Crowbar, Fire Axe, Flashlight ×2,
     Katana ×2, Kukri ×2, Machete ×4, Molotov ×4, Pistol, Plenty of Bullets ×3, Plenty of Shells ×3,
     Sawed-Off ×4, Shotgun ×2, Sniper Rifle ×2, Sub-MG ×2, Water ×2.
   - Epic: Aaahh! ×2, Army Sniper Rifle, Automatic Shotgun, Evil Twins, Golden AK-47, Golden Kukri, Gunblade,
     Ma's Shotgun, Nailbat, Zantetsuken.
-- A confirmar (leg `dados`): a árvore de habilidades de cada sobrevivente e os atributos de cada arma (dados,
-  precisão, dano, alcance, dual, porta, barulho).
+- Árvores e atributos das armas foram lidos nos ID Cards e nas imagens das cartas (fontes em js/dados). Continua sem fonte só o Aaahh! épico.
