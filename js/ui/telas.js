@@ -384,7 +384,7 @@ export function folhaIdCard({ sobrevivente }) {
       <button class="btn btn-icone btn-fantasma" type="button" data-acao="fechar-folha" aria-label="Fechar">${icone('i-fechar')}</button></div>
     <div class="folha__opcoes">
       <div class="id-card${img ? '' : ' id-card--sem'}">${img}
-        <p class="id-card__falta">${retrato(sobrevivente, 'azul')}<span class="texto-suave">Sem a imagem do ID Card neste aparelho.</span></p></div>
+        <div class="id-card__falta">${retrato(sobrevivente, 'azul')}<span class="texto-suave">Sem a imagem do ID Card neste aparelho.</span></div></div>
       <p class="texto-suave dica">ID Card oficial · imagem © CMON</p>
     </div>`;
 }

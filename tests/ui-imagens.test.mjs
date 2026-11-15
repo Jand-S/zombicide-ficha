@@ -50,7 +50,8 @@ test('folha do ID Card: imagem com alt e, se der erro, troca pelo aviso com o re
   const html = folhaIdCard({ sobrevivente: s });
   assert.match(html, new RegExp(`<img src="${s.card}" alt="ID Card de Tiger Sam" width="600" height="518"`));
   assert.match(html, /onerror="this.parentNode.classList.add\('id-card--sem'\)"/);
-  assert.match(html, /class="id-card__falta"/);
+  assert.match(html, /<div class="id-card__falta">/); // div: um <p> com o retrato (div) dentro quebra no parser
+  assert.doesNotMatch(html, /<p[^>]*>(?:(?!<\/p>)[^])*<div/); // nenhum bloco dentro de <p>
   assert.match(html, /data-acao="fechar-folha"/);
   // sem card nos dados: já abre no modo sem imagem
   const sem = folhaIdCard({ sobrevivente: { ...s, card: undefined } });
