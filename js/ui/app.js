@@ -5,7 +5,7 @@ import { EQUIPAMENTOS } from '../dados/equipamentos.js';
 import { criarEstado } from '../estado.js';
 import { escolher } from '../regras.js';
 import {
-  telaInicial, ferir, curar, gastarAcao, devolverAcao, novoTurno, mudarXp, mudarObjetivo, resumo,
+  telaInicial, desenharComRecuo, ferir, curar, gastarAcao, devolverAcao, novoTurno, mudarXp, mudarObjetivo, resumo,
 } from './logica.js';
 import {
   telaFicha, telaMesa, telaPartidas, telaEscolher, folhaEscolha, folhaConfig, folhaCartas, listaCartas,
@@ -87,25 +87,34 @@ function render() {
   if (tela === 'ficha' && !f) tela = p ? 'mesa' : (api.estado.partidas.length ? 'partidas' : 'escolher');
   if (tela === 'mesa' && !p) tela = api.estado.partidas.length ? 'partidas' : 'escolher';
 
-  let html = '';
   if (sel && (tela !== 'ficha' || sel.fichaId !== f?.id)) sel = null;
-  if (tela === 'ficha') {
-    prefs.lembrarFicha(p.id, f.id);
-    html = telaFicha({
+  const r = desenharComRecuo(tela, (t) => htmlDaTela(t, f, p));
+  tela = r.tela;
+  if (r.erro) {
+    console.error(r.erro);
+    sel = null;
+    // no primeiro render o toast ainda não existe (let mais abaixo): avisa no próximo tique
+    setTimeout(() => toast(`Erro ao abrir a tela · ${tela === 'mesa' ? 'voltei para a mesa' : 'voltei ao início'}`,
+      { desfazer: false, sangue: true, iconeId: 'i-caveira' }), 0);
+  }
+  document.body.dataset.tela = tela;
+  app.innerHTML = r.html;
+  if (foco != null && foco >= 0) app.querySelectorAll('[data-acao]')[foco]?.focus({ preventScroll: true });
+  if (folhaAtual === 'config' && f) folha.innerHTML = conteudoConfig();
+}
+
+function htmlDaTela(t, f, p) {
+  if (t === 'ficha') {
+    const html = telaFicha({
       ficha: f, sobrevivente: SOB[f.sobreviventeId], habilidades: HABILIDADES,
       fichasDaMesa: p.fichas, sobreviventes: SOB, equipamentos: EQ, selecionado: sel,
     });
-  } else if (tela === 'mesa') {
-    html = telaMesa({ partida: p, sobreviventes: SOB, fichaAtiva: api.estado.fichaAtiva });
-  } else if (tela === 'partidas') {
-    html = telaPartidas({ partidas: api.estado.partidas, partidaAtiva: api.estado.partidaAtiva });
-  } else {
-    html = telaEscolher({ sobreviventes: SOBREVIVENTES, habilidades: HABILIDADES, temPartida: Boolean(p) });
+    prefs.lembrarFicha(p.id, f.id);
+    return html;
   }
-  document.body.dataset.tela = tela;
-  app.innerHTML = html;
-  if (foco != null && foco >= 0) app.querySelectorAll('[data-acao]')[foco]?.focus({ preventScroll: true });
-  if (folhaAtual === 'config' && f) folha.innerHTML = conteudoConfig();
+  if (t === 'mesa') return telaMesa({ partida: p, sobreviventes: SOB, fichaAtiva: api.estado.fichaAtiva });
+  if (t === 'partidas') return telaPartidas({ partidas: api.estado.partidas, partidaAtiva: api.estado.partidaAtiva });
+  return telaEscolher({ sobreviventes: SOBREVIVENTES, habilidades: HABILIDADES, temPartida: Boolean(p) });
 }
 
 function ir(nova) {
