@@ -1,20 +1,28 @@
 # O que a ficha precisa ter
 
-Pedido do dono (14/11/2026): "painel de sobrevivente" interativo, para um 7º jogador.
+Pedido do dono (14/11/2026): um web app de ficha (painel de sobrevivente) para o Zombicide 2ª edição, com visual
+temático, ótimo no celular e com poucos toques. As regras estão em docs/regras-2e.md e as tarefas em
+docs/status.md.
+
+## Decisões do dono (14/11/2026)
+- Edição: Zombicide 2ª edição (caixa base, 12 sobreviventes).
+- Só sobreviventes oficiais, com as habilidades fixas do ID Card. Não há criação de personagem.
+- Várias pessoas: cada uma no próprio celular, sem servidor. No mesmo aparelho dá para ter várias fichas (tela
+  Mesa), e uma ficha passa para outro celular por link ou QR.
+- Itens: escolhidos de uma lista das cartas da 2E (com dados da arma), com texto livre para expansões.
+- Arte própria em SVG/CSS. Nada de arte ou logo da CMON. No rodapé: "ficha de fã, não oficial".
 
 ## Campos
-- Nome do sobrevivente e foto/ícone opcional.
-- Habilidades por nível de perigo: azul, amarelo, laranja e vermelho. Laranja e vermelho têm escolha entre opções.
-- Trilha de XP, com o nível atual destacado conforme a pontuação.
-- Ferimentos (marcar e desmarcar).
-- Inventário: 2 mãos e mochila.
-- Ações do turno, com contador que reinicia a cada turno.
+- Sobrevivente (nome, retrato SVG genérico, adulto ou Kid).
+- Barra de perigo com XP e nível atual (azul, amarelo, laranja, vermelho). Ultrared é opcional.
+- Habilidades por nível. Ao chegar ao laranja ou ao vermelho, a ficha pede a escolha.
+- Vida (3 para adulto, 2 para Kid), com ferir e curar.
+- Ações do turno (normais e grátis por tipo), com "novo turno".
+- Inventário: 2 mãos, 3 de mochila e +2 com Hoard. Contador de objetivos.
 
 ## Comportamento
-- Salvar no navegador (localStorage), com botão para zerar a partida.
-- Funcionar bem no celular, em pé, com botões grandes.
-- Permitir criar mais de um sobrevivente, se for fácil.
-
-## A confirmar com o dono antes de codar
-- Qual edição de Zombicide (2ª edição, Black Plague, Invader, outra). Os limites de XP, os ferimentos e o tamanho da mochila mudam conforme a edição. Não chutar números: perguntar ou deixar configurável.
-- Se a ficha usa um sobrevivente oficial (habilidades fixas) ou um personagem criado pelo grupo.
+- Salva sozinha a cada mudança (localStorage). Ao reabrir, volta para a ficha onde parou.
+- Partidas com nome, para pausar uma e abrir outra. Exportar e importar backup.
+- Desfazer em vez de pedir confirmação.
+- Funciona offline (PWA) e dá para instalar na tela inicial.
+- Toques de no mínimo 48px, funciona a partir de 360px de largura, uso com uma mão.
