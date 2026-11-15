@@ -136,6 +136,12 @@ body[data-tela="ficha"] .rodape { padding-bottom: calc(var(--barra-xp) + 16px + 
 .carta-opcao__attrs span { display: inline-flex; align-items: center; gap: 3px; }
 .carta-opcao__attrs .icone { width: 14px; height: 14px; }
 
+/* ---------- link/QR e backup ---------- */
+.qr-caixa { display: grid; place-items: center; padding: 12px; background: #fff; max-width: 320px; width: 100%; margin: 0 auto; }
+.qr-caixa .qr { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+.backup .linha { gap: 8px; }
+.backup label.btn { cursor: pointer; }
+
 /* ---------- rodapé ---------- */
 .rodape {
   text-align: center; padding: 24px var(--gutter) calc(24px + env(safe-area-inset-bottom));

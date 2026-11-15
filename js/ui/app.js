@@ -9,7 +9,9 @@ import {
 } from './logica.js';
 import {
   telaFicha, telaMesa, telaPartidas, telaEscolher, folhaEscolha, folhaConfig, folhaCartas, listaCartas,
+  folhaCompartilhar,
 } from './telas.js';
+import { urlDaFicha, qrDoTexto, nomeBackup } from './compartilhar.js';
 import { toqueSlot, moverSlot, porNoSlot, lerSlot, nomeNoSlot, nomeDoSlot } from './inventario.js';
 import { criarPrefs } from './prefs.js';
 import { icone, esc, NOME_NIVEL } from './dom.js';
@@ -38,14 +40,37 @@ let termoCartas = '';
 // ---------- início ----------
 
 api.carregar();
-if (location.hash.includes('f=')) {
-  const f = api.importarLink(location.hash);
-  history.replaceState(null, '', location.pathname + location.search);
-  if (f) setTimeout(() => toast(`Ficha de ${SOB[f.sobreviventeId]?.nome ?? 'sobrevivente'} recebida`, { desfazer: false }), 0);
-}
+const recebida = receberLink();
 tela = telaInicial(api).tela;
 render();
+if (recebida) setTimeout(() => avisarRecebida(recebida), 0);
 try { navigator.storage?.persist?.().catch(() => {}); } catch { /* sem suporte */ }
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  navigator.serviceWorker.register('sw.js').catch(() => { /* sem offline, segue */ });
+}
+
+/** Se a URL trouxer `#f=...`, põe a ficha na partida ativa e limpa o hash. Devolve a ficha ou null. */
+function receberLink() {
+  if (!location.hash.includes('f=')) return null;
+  const f = api.importarLink(location.hash);
+  history.replaceState(null, '', location.pathname + location.search);
+  return f;
+}
+
+function avisarRecebida(f) {
+  toast(`Ficha de ${SOB[f.sobreviventeId]?.nome ?? 'sobrevivente'} recebida · está na mesa`, { desfazer: false, iconeId: 'i-compartilhar' });
+}
+
+// link aberto com o app já aberto (mesma aba)
+window.addEventListener('hashchange', () => {
+  const f = receberLink();
+  if (!f) return;
+  sel = null;
+  fecharFolha();
+  tela = 'ficha';
+  render();
+  avisarRecebida(f);
+});
 
 // ---------- desenho ----------
 
@@ -126,8 +151,10 @@ function conteudoConfig() {
 // ---------- toast com desfazer ----------
 
 let timerToast = null;
-function toast(msg, { desfazer = true, sangue = false, iconeId = 'i-xp' } = {}) {
+let desfazerExtra = null; // desfazer que não passa pela pilha do estado (ex.: restaurar backup)
+function toast(msg, { desfazer = true, sangue = false, iconeId = 'i-xp', aoDesfazer = null } = {}) {
   clearTimeout(timerToast);
+  desfazerExtra = desfazer ? aoDesfazer : null;
   const [titulo, ...resto] = String(msg).split(' · ');
   toastEl.className = 'toast visivel' + (sangue ? ' toast--sangue' : '');
   toastEl.innerHTML = `${icone(iconeId)}<span class="toast__texto"><b>${esc(titulo)}</b>${esc(resto.join(' · '))}</span>`
@@ -267,6 +294,89 @@ function porUi(conteudo) {
   }, { iconeId: 'i-mochila' });
 }
 
+// ---------- passar ficha (link/QR) e backup ----------
+
+let linkAtual = null;
+
+function abrirCompartilhar() {
+  const f = api.fichaAtual();
+  if (!f) return;
+  linkAtual = urlDaFicha(location.href, api.exportarLink(f.id));
+  if (!linkAtual) { toast('Não deu para gerar o link', { desfazer: false }); return; }
+  abrirFolha('compartilhar', folhaCompartilhar({
+    nome: SOB[f.sobreviventeId]?.nome ?? 'ficha',
+    url: linkAtual,
+    svgQr: qrDoTexto(globalThis.qrcode, linkAtual),
+    podeCompartilhar: typeof navigator.share === 'function',
+  }));
+}
+
+async function copiarLink() {
+  if (!linkAtual) return;
+  try {
+    await navigator.clipboard.writeText(linkAtual);
+    toast('Link copiado', { desfazer: false, iconeId: 'i-compartilhar' });
+  } catch {
+    const campo = folha.querySelector('[data-link="ficha"]');
+    campo?.focus();
+    campo?.select();
+    toast('Selecione e copie o link', { desfazer: false, iconeId: 'i-compartilhar' });
+  }
+}
+
+function enviarLink() {
+  if (!linkAtual) return;
+  navigator.share?.({ title: 'Ficha do Zombicide', url: linkAtual }).catch(() => {});
+}
+
+function baixarBackup() {
+  try {
+    const blob = new Blob([api.exportarJSON()], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = nomeBackup();
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    toast('Backup salvo · ' + a.download, { desfazer: false, iconeId: 'i-compartilhar' });
+  } catch {
+    toast('Não deu para salvar o arquivo', { desfazer: false });
+  }
+}
+
+async function restaurarBackup(arquivo) {
+  if (!arquivo) return;
+  let txt = '';
+  try { txt = await arquivo.text(); } catch { /* ilegível */ }
+  const antes = api.exportarJSON();
+  if (!api.importarJSON(txt)) {
+    toast('Arquivo inválido · não é um backup da ficha', { desfazer: false, sangue: true });
+    return;
+  }
+  sel = null;
+  tela = telaInicial(api).tela;
+  render();
+  const n = api.estado.partidas.length;
+  toast(`Backup aberto · ${n} partida${n === 1 ? '' : 's'}`, {
+    iconeId: 'i-desfazer',
+    aoDesfazer: () => {
+      api.importarJSON(antes);
+      tela = telaInicial(api).tela;
+      render();
+      toast('Desfeito · voltou ao que era antes do backup', { desfazer: false, iconeId: 'i-desfazer' });
+    },
+  });
+}
+
+app.addEventListener('change', (ev) => {
+  const el = ev.target;
+  if (el.dataset?.acao !== 'importar-json') return;
+  const arq = el.files?.[0];
+  el.value = '';
+  restaurarBackup(arq);
+});
+
 // ---------- toques ----------
 
 let segurou = false;
@@ -325,6 +435,10 @@ function tratarClique(ev) {
       break;
     }
     case 'abrir-config': abrirFolha('config', conteudoConfig()); break;
+    case 'abrir-compartilhar': abrirCompartilhar(); break;
+    case 'copiar-link': copiarLink(); break;
+    case 'enviar-link': enviarLink(); break;
+    case 'exportar-json': baixarBackup(); break;
     case 'fechar-folha': fecharFolha(); break;
     case 'remover-ficha': {
       const f = api.fichaAtual();
@@ -338,6 +452,12 @@ function tratarClique(ev) {
     }
     case 'desfazer': {
       sel = null;
+      if (desfazerExtra) {
+        const fn = desfazerExtra;
+        desfazerExtra = null;
+        fn();
+        break;
+      }
       const f = api.desfazer();
       clearTimeout(timerToast);
       if (f && tela !== 'ficha' && api.fichaAtual()) tela = 'ficha';

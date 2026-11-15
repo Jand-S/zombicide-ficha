@@ -162,13 +162,15 @@ function statsCarta(e) {
 function botaoSlot(ficha, area, i, slot, equipamentos, selecionado) {
   const ref = { area, i };
   const nomeSlot = nomeDoSlot(ref);
+  // na grade de 3 o título da seção já diz "Mochila": o slot mostra só o número
+  const curto = area === 'maos' ? nomeSlot : String(i + 1);
   const sel = mesmoSlot(selecionado, ref);
   const dados = `data-acao="slot" data-area="${area}" data-i="${i}"`;
   const tipoMao = area === 'maos' ? ' data-tipo="mao"' : '';
   if (!slot) {
     const rot = selecionado ? `Mover para ${nomeSlot.toLowerCase()} (vazio)` : `${nomeSlot}: vazio. Toque para pôr carta.`;
     return `<button class="slot slot--vazio${selecionado ? ' slot--destino' : ''}" type="button" ${dados}${tipoMao} aria-label="${esc(rot)}">
-      <span class="slot__rotulo">${icone(area === 'maos' ? 'i-mao' : 'i-mochila')}${esc(nomeSlot)}</span>
+      <span class="slot__rotulo">${icone(area === 'maos' ? 'i-mao' : 'i-mochila')}${esc(curto)}</span>
       <span class="slot__nome">${icone(selecionado ? 'i-mao' : 'i-mais')}${selecionado ? 'Aqui' : 'Vazio'}</span></button>`;
   }
   const nome = nomeNoSlot(slot, equipamentos);
@@ -179,7 +181,7 @@ function botaoSlot(ficha, area, i, slot, equipamentos, selecionado) {
   const acaoTexto = sel ? 'selecionada; toque de novo para cancelar'
     : (selecionado ? 'toque para trocar com a selecionada' : 'toque para mover ou trocar');
   return `<button class="${classe}" type="button" ${dados}${tipoMao} aria-pressed="${sel}" aria-label="${esc(`${nomeSlot}: ${nome}, ${acaoTexto}`)}">
-    <span class="slot__rotulo">${icone(e ? ICONE_TIPO[e.tipo] ?? 'i-mochila' : 'i-config')}${esc(nomeSlot)} · ${esc(rotulo)}</span>
+    <span class="slot__rotulo">${icone(e ? ICONE_TIPO[e.tipo] ?? 'i-mochila' : 'i-config')}${esc(curto)} · ${esc(rotulo)}</span>
     <span class="slot__nome">${esc(nome)}</span>${statsCarta(e)}</button>`;
 }
 
@@ -216,10 +218,10 @@ export function listaCartas({ cartas, termo }) {
   if (!achadas.length) return '<p class="texto-suave">Nenhuma carta com esse nome. Use o texto livre abaixo.</p>';
   return achadas.map((e) => {
     const tags = [NOME_TIPO_CARTA[e.tipo], e.inicial ? 'Inicial' : '', e.epico ? 'Épico' : ''].filter(Boolean).join(' · ');
-    const attrs = atributosCarta(e).map((a) => `<span title="${a.rotulo}">${icone(a.icone, 'icone--p')}${esc(a.rotulo)} ${esc(a.valor)}</span>`).join('');
+    const attrs = e.tipo === 'item' ? '' : atributosCarta(e).map((a) => `<span title="${a.rotulo}">${icone(a.icone, 'icone--p')}${esc(a.rotulo)} ${esc(a.valor)}</span>`).join('');
     return `<button class="carta-opcao${e.epico ? ' carta-opcao--epico' : ''}" type="button" data-acao="por-carta" data-equip="${esc(e.id)}">
       <span class="carta-opcao__nome">${esc(e.nome)}${tags ? `<small>${esc(tags)}</small>` : ''}</span>
-      <span class="carta-opcao__attrs">${attrs}</span></button>`;
+      ${attrs ? `<span class="carta-opcao__attrs">${attrs}</span>` : ''}</button>`;
   }).join('');
 }
 
@@ -229,18 +231,15 @@ export function folhaCartas({ alvo, slotAtual, cartas, termo = '' }) {
     <div class="folha__titulo"><span id="folha-titulo">${esc(nomeDoSlot(alvo))}</span>
       <button class="btn btn-icone btn-fantasma" type="button" data-acao="fechar-folha" aria-label="Fechar">${icone('i-fechar')}</button></div>
     <div class="folha__opcoes">
+      ${slotAtual ? `<button class="btn btn-fantasma" type="button" data-acao="slot-esvaziar">${icone('i-fechar')}Esvaziar ${esc(nomeDoSlot(alvo).toLowerCase())}</button>` : ''}
       <input class="campo" type="search" data-busca="cartas" value="${esc(termo)}" placeholder="Buscar carta (ex.: pistol)"
         aria-label="Buscar carta" autocomplete="off" enterkeyhint="search">
+      <form data-form="texto-livre" class="linha linha--nowrap">
+        <input class="campo cresce" name="texto" maxlength="${MAX_TEXTO}" value="${esc(texto)}" placeholder="Ou texto livre (ex.: chave)" aria-label="Texto livre" autocomplete="off">
+        <button class="btn btn-aviso" type="submit">${icone('i-mais')}Pôr</button>
+      </form>
       <p class="texto-suave dica">Atributos com “—” ainda não foram conferidos nas cartas.</p>
       <div class="lista-cartas" id="lista-cartas">${listaCartas({ cartas, termo })}</div>
-      <form class="pilha" data-form="texto-livre">
-        <label class="rotulo" for="texto-livre">Texto livre</label>
-        <div class="linha linha--nowrap">
-          <input class="campo cresce" id="texto-livre" name="texto" maxlength="${MAX_TEXTO}" value="${esc(texto)}" placeholder="Ex.: chave do carro" autocomplete="off">
-          <button class="btn btn-aviso" type="submit">${icone('i-mais')}Pôr</button>
-        </div>
-      </form>
-      ${slotAtual ? `<button class="btn btn-grande btn-fantasma" type="button" data-acao="slot-esvaziar">${icone('i-fechar')}Esvaziar ${esc(nomeDoSlot(alvo).toLowerCase())}</button>` : ''}
     </div>`;
 }
 
@@ -310,6 +309,15 @@ export function telaPartidas({ partidas, partidaAtiva }) {
       </div>
     </form>
     ${lista || '<p class="texto-suave">Nenhuma partida salva.</p>'}
+    <section class="cartao pilha backup" aria-labelledby="t-backup">
+      <h2 class="cartao__titulo" id="t-backup">${icone('i-desfazer')}Backup</h2>
+      <p class="texto-suave dica">Tudo (partidas e fichas) num arquivo .json, para guardar ou levar para outro aparelho.</p>
+      <div class="linha linha--nowrap">
+        <button class="btn cresce" type="button" data-acao="exportar-json">${icone('i-compartilhar')}Salvar arquivo</button>
+        <label class="btn cresce" for="arquivo-backup">${icone('i-mais')}Abrir arquivo</label>
+        <input class="sr-only" id="arquivo-backup" type="file" accept="application/json,.json" data-acao="importar-json">
+      </div>
+    </section>
   </main>`;
 }
 
@@ -361,7 +369,26 @@ export function folhaConfig({ ficha, sobrevivente, wakeLock, wakeLockSuportado }
         <span><b>Ultrared</b><small>Ao chegar a 43, o marcador volta a 0 e continua no vermelho.</small></span></label>
       <label class="interruptor"><input type="checkbox" data-acao="wake-lock" ${wakeLock ? 'checked' : ''} ${wakeLockSuportado ? '' : 'disabled'}>
         <span><b>Tela sempre acesa</b><small>${wakeLockSuportado ? 'Enquanto a ficha estiver aberta.' : 'Este navegador não deixa.'}</small></span></label>
+      <button class="btn btn-grande" type="button" data-acao="abrir-compartilhar">${icone('i-compartilhar')}Passar ficha (link e QR)</button>
       <button class="btn btn-grande btn-fantasma" type="button" data-acao="remover-ficha">${icone('i-fechar')}Tirar ficha da mesa</button>
       ${fonte}
+    </div>`;
+}
+
+export function folhaCompartilhar({ nome, url, svgQr, podeCompartilhar }) {
+  const qr = svgQr
+    ? `<div class="qr-caixa">${svgQr}</div>`
+    : '<p class="texto-suave">Não deu para desenhar o QR aqui. Use o link.</p>';
+  return `
+    <div class="folha__titulo"><span id="folha-titulo">Passar ${esc(nome)}</span>
+      <button class="btn btn-icone btn-fantasma" type="button" data-acao="fechar-folha" aria-label="Fechar">${icone('i-fechar')}</button></div>
+    <div class="folha__opcoes">
+      <p class="texto-suave dica">Quem abrir o link (ou ler o QR) recebe uma cópia desta ficha na partida dele.</p>
+      ${qr}
+      <input class="campo" type="text" readonly value="${esc(url)}" aria-label="Link da ficha" data-link="ficha">
+      <div class="linha linha--nowrap">
+        <button class="btn btn-aviso cresce" type="button" data-acao="copiar-link">${icone('i-compartilhar')}Copiar link</button>
+        ${podeCompartilhar ? `<button class="btn cresce" type="button" data-acao="enviar-link">${icone('i-compartilhar')}Enviar</button>` : ''}
+      </div>
     </div>`;
 }
