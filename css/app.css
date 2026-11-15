@@ -1,0 +1,124 @@
+/* Layout do app (as peças visuais vêm de css/tema.css). Pensado para 360px e uma mão só. */
+
+:root { --barra-xp: calc(var(--toque) + 16px + 20px); }
+
+.app { min-height: 70vh; }
+button.cartao { display: block; width: 100%; border: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; }
+button.cartao:active { transform: translateY(1px); }
+.cor-aviso { color: var(--aviso); }
+.dica { font-size: 15px; color: var(--texto-suave); margin-top: 4px; }
+
+/* ---------- topo fixo da ficha: nome, nível e barra de perigo ---------- */
+.topo-ficha { display: block; padding-bottom: 4px; }
+.topo-ficha__linha { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.topo-ficha__nome { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; }
+.topo-ficha__nome .topo__titulo { flex: 0 1 auto; font-size: 30px; }
+.topo-ficha__nome .chip-nivel { flex: none; }
+.topo-ficha__xp { display: grid; justify-items: end; line-height: 1; }
+.topo-ficha__xp .numero { font-size: 32px; color: var(--aviso); }
+.topo-ficha__xp .rotulo { font-size: 11px; }
+.topo-ficha .barra-perigo { padding-top: 20px; margin-top: 2px; }
+.topo-ficha .barra-perigo__trilho { height: 16px; }
+.topo-ficha .barra-perigo__marcador { top: -20px; }
+.topo-ficha .barra-perigo__marcador b { min-width: 28px; height: 18px; font-size: 17px; padding-bottom: 3px; }
+.topo-ficha .barra-perigo__marcas { height: 14px; margin-top: 2px; font-size: 13px; }
+
+/* ---------- troca rápida entre fichas da mesa ---------- */
+.abas-fichas {
+  display: flex; gap: 6px; overflow-x: auto; padding: 8px var(--gutter) 0; max-width: 640px; margin: 0 auto;
+  scrollbar-width: none;
+}
+.abas-fichas::-webkit-scrollbar { display: none; }
+.aba-ficha {
+  flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: var(--toque); padding: 4px 10px 4px 4px;
+  border: 2px solid var(--borda); background: var(--papel); color: var(--texto-suave); font: 600 16px/1 var(--fonte-texto);
+  cursor: pointer; touch-action: manipulation;
+}
+.aba-ficha--atual { border-color: var(--aviso); color: var(--texto); }
+.retrato--mini { width: 36px; height: 36px; font-size: 18px; --ch: 6px; }
+
+/* ---------- avisos ---------- */
+.selo {
+  display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px;
+  font: 700 12px/1.4 var(--fonte-texto); letter-spacing: .1em; text-transform: uppercase;
+  color: var(--sobre-aviso); background: var(--aviso);
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+  white-space: nowrap;
+}
+.hab-selo { margin: -4px 0 10px; }
+.aviso-conferir { font-size: 15px; color: var(--texto-suave); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.aviso-eliminado {
+  display: flex; gap: 8px; align-items: center; padding: 10px 12px; font-weight: 700;
+  background: var(--sangue-escuro); border-left: 4px solid var(--sangue-vivo);
+}
+
+/* ---------- ficha ---------- */
+.ficha { padding-bottom: 24px; }
+.acoes-gratis { margin-top: 8px; gap: 8px; }
+.acoes-gratis .rotulo { min-width: 0; }
+.novo-turno { margin-top: 14px; }
+.hab { gap: 10px; }
+.hab-linha { display: grid; gap: 4px; }
+.hab-linha__nivel[data-nivel="azul"] { color: var(--azul); }
+.hab-linha__nivel[data-nivel="amarelo"] { color: var(--amarelo); }
+.hab-linha__nivel[data-nivel="laranja"] { color: var(--laranja); }
+.hab-linha__nivel[data-nivel="vermelho"] { color: var(--vermelho-texto); }
+.hab-linha__chips { gap: 6px; }
+.hab + .btn-grande { margin-top: 14px; }
+.coracao { -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
+
+/* barra de XP no rodapé da tela, ao alcance do polegar */
+.barra-xp {
+  position: fixed; z-index: 35; left: 0; right: 0; bottom: 0;
+  display: flex; gap: 8px; align-items: center;
+  max-width: 640px; margin: 0 auto;
+  padding: 10px max(var(--gutter), env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(var(--gutter), env(safe-area-inset-left));
+  background: linear-gradient(0deg, rgb(18 17 16 / .98), rgb(18 17 16 / .9));
+  border-top: 2px solid var(--tinta);
+  box-shadow: 0 -8px 20px rgb(0 0 0 / .5);
+}
+.barra-xp .btn-grande { width: auto; padding-inline: 12px; }
+.barra-xp .btn-icone { flex: none; width: calc(var(--toque) + 16px); padding: 0; }
+body[data-tela="ficha"] .toast { bottom: calc(var(--barra-xp) + 8px + env(safe-area-inset-bottom)); }
+body[data-tela="ficha"] .rodape { padding-bottom: calc(var(--barra-xp) + 16px + env(safe-area-inset-bottom)); }
+
+/* ---------- mesa, partidas e escolha ---------- */
+.cartao-ficha, .cartao-sobrevivente { display: flex !important; align-items: center; gap: 12px; }
+.cartao-ficha .retrato, .cartao-sobrevivente .retrato { width: 60px; height: 60px; font-size: 30px; }
+.cartao-ficha__corpo { flex: 1; min-width: 0; display: grid; gap: 4px; justify-items: start; }
+.cartao-ficha__nome { font-family: var(--fonte-titulo); font-size: 28px; letter-spacing: .04em; line-height: 1; }
+.cartao-ficha__dados { display: grid; gap: 4px; justify-items: end; font-weight: 700; }
+.cartao-ficha__dados span { display: inline-flex; align-items: center; gap: 4px; }
+.cartao-ficha--atual { --line: var(--aviso); }
+.cartao-partida { display: grid !important; gap: 2px; }
+.cartao-partida__nome { font-family: var(--fonte-titulo); font-size: 28px; letter-spacing: .04em; line-height: 1; overflow-wrap: anywhere; }
+.cartao-partida--ativa { --line: var(--aviso); }
+.grade-sobreviventes { display: grid; gap: 10px; }
+@media (min-width: 560px) { .grade-sobreviventes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.campo {
+  min-height: var(--toque); min-width: 0; padding: 8px 12px; font-size: 18px;
+  background: var(--fundo); border: 2px solid var(--borda-forte); color: var(--texto);
+}
+.campo:focus-visible { border-color: var(--aviso); }
+
+/* ---------- folhas ---------- */
+.opcao-hab { display: grid !important; gap: 2px; justify-items: start; text-align: left; width: 100%; min-height: var(--toque); padding: 10px 14px !important; }
+.opcao-hab__nome { font-family: var(--fonte-titulo); font-size: 24px; letter-spacing: .04em; line-height: 1.05; }
+.opcao-hab__desc { font: 500 16px/1.3 var(--fonte-texto); color: var(--texto-suave); text-transform: none; letter-spacing: 0; }
+.interruptor { display: flex; align-items: center; gap: 12px; min-height: var(--toque); padding: 6px 0; cursor: pointer; }
+.interruptor input { width: 28px; height: 28px; flex: none; accent-color: var(--aviso); }
+.interruptor span { display: grid; gap: 2px; }
+.interruptor small { color: var(--texto-suave); font-size: 15px; }
+
+/* ---------- rodapé ---------- */
+.rodape {
+  text-align: center; padding: 24px var(--gutter) calc(24px + env(safe-area-inset-bottom));
+  font-size: 14px; letter-spacing: .12em; text-transform: uppercase; color: var(--texto-suave);
+}
+
+/* toast escondido não pode roubar toques da barra de XP */
+.toast:not(.visivel) { pointer-events: none; visibility: hidden; transition: transform .3s var(--ease), opacity .3s var(--ease), visibility 0s linear .3s; }
+/* com a folha de baixo aberta, o toast vai para o topo para não cobrir as opções */
+body.com-folha .toast { bottom: auto; top: calc(8px + env(safe-area-inset-top)); }
+body.com-folha .toast:not(.visivel) { transform: translate(-50%, -140%); }
