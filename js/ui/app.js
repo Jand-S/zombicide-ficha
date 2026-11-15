@@ -1,16 +1,21 @@
 // Ponto de entrada da página: liga estado, regras, dados e telas, e trata os toques.
 import { SOBREVIVENTES } from '../dados/sobreviventes.js';
 import { HABILIDADES } from '../dados/habilidades.js';
+import { EQUIPAMENTOS } from '../dados/equipamentos.js';
 import { criarEstado } from '../estado.js';
 import { escolher } from '../regras.js';
 import {
   telaInicial, ferir, curar, gastarAcao, devolverAcao, novoTurno, mudarXp, mudarObjetivo, resumo,
 } from './logica.js';
-import { telaFicha, telaMesa, telaPartidas, telaEscolher, folhaEscolha, folhaConfig } from './telas.js';
+import {
+  telaFicha, telaMesa, telaPartidas, telaEscolher, folhaEscolha, folhaConfig, folhaCartas, listaCartas,
+} from './telas.js';
+import { toqueSlot, moverSlot, porNoSlot, lerSlot, nomeNoSlot, nomeDoSlot } from './inventario.js';
 import { criarPrefs } from './prefs.js';
 import { icone, esc, NOME_NIVEL } from './dom.js';
 
 const SOB = Object.fromEntries(SOBREVIVENTES.map((s) => [s.id, s]));
+const EQ = Object.fromEntries(EQUIPAMENTOS.map((e) => [e.id, e]));
 const TEMPO_DESFAZER = 5000;
 const TEMPO_SEGURAR = 500;
 
@@ -25,7 +30,10 @@ const fundo = document.getElementById('folha-fundo');
 const toastEl = document.getElementById('toast');
 
 let tela = 'escolher';
-let folhaAtual = null; // 'escolha' | 'config' | null
+let folhaAtual = null; // 'escolha' | 'config' | 'cartas' | null
+let sel = null; // slot selecionado para mover: { area, i, fichaId }
+let alvoCartas = null; // slot que a folha de cartas vai preencher
+let termoCartas = '';
 
 // ---------- início ----------
 
@@ -55,11 +63,12 @@ function render() {
   if (tela === 'mesa' && !p) tela = api.estado.partidas.length ? 'partidas' : 'escolher';
 
   let html = '';
+  if (sel && (tela !== 'ficha' || sel.fichaId !== f?.id)) sel = null;
   if (tela === 'ficha') {
     prefs.lembrarFicha(p.id, f.id);
     html = telaFicha({
       ficha: f, sobrevivente: SOB[f.sobreviventeId], habilidades: HABILIDADES,
-      fichasDaMesa: p.fichas, sobreviventes: SOB,
+      fichasDaMesa: p.fichas, sobreviventes: SOB, equipamentos: EQ, selecionado: sel,
     });
   } else if (tela === 'mesa') {
     html = telaMesa({ partida: p, sobreviventes: SOB, fichaAtiva: api.estado.fichaAtiva });
@@ -208,6 +217,56 @@ function pipUi(btn) {
   mudar((x) => gastarAcao(x, tipo, total), tipo ? 'Ação grátis gasta' : 'Ação gasta', { iconeId: 'i-turno' });
 }
 
+// ---------- inventário ----------
+
+function refDe(btn) {
+  return { area: btn.dataset.area, i: Number(btn.dataset.i) };
+}
+
+function abrirCartas(alvo) {
+  const f = api.fichaAtual();
+  if (!f) return;
+  alvoCartas = { area: alvo.area, i: alvo.i };
+  termoCartas = '';
+  abrirFolha('cartas', folhaCartas({ alvo: alvoCartas, slotAtual: lerSlot(f, alvoCartas), cartas: EQUIPAMENTOS, termo: '' }));
+}
+
+function textoMover(antes, de, para) {
+  const a = nomeNoSlot(lerSlot(antes, de), EQ);
+  const b = nomeNoSlot(lerSlot(antes, para), EQ);
+  const onde = `${nomeDoSlot(de).toLowerCase()} → ${nomeDoSlot(para).toLowerCase()}`;
+  return b ? `${a} ⇄ ${b} · ${onde}` : `${a} · ${onde}`;
+}
+
+function slotUi(btn) {
+  const f = api.fichaAtual();
+  if (!f) return;
+  const r = toqueSlot(sel, f, refDe(btn));
+  sel = r.sel ? { ...r.sel, fichaId: f.id } : null;
+  if (r.efeito?.tipo === 'cartas') { abrirCartas(r.efeito.alvo); return; }
+  if (r.efeito?.tipo === 'mover') {
+    const { de, para } = r.efeito;
+    mudar((x) => moverSlot(x, de, para), textoMover(f, de, para), { iconeId: 'i-mochila' });
+    return;
+  }
+  if (r.sel) vibrar();
+  render();
+}
+
+function porUi(conteudo) {
+  const f = api.fichaAtual();
+  if (!f || !alvoCartas) return;
+  const alvo = alvoCartas;
+  const antes = nomeNoSlot(lerSlot(f, alvo), EQ);
+  fecharFolha();
+  sel = null;
+  mudar((x) => porNoSlot(x, alvo, conteudo), (nova) => {
+    const agora = nomeNoSlot(lerSlot(nova, alvo), EQ);
+    if (!agora) return `${antes ?? 'Carta'} descartada · ${nomeDoSlot(alvo).toLowerCase()} vazia`;
+    return `${agora} · em ${nomeDoSlot(alvo).toLowerCase()}`;
+  }, { iconeId: 'i-mochila' });
+}
+
 // ---------- toques ----------
 
 let segurou = false;
@@ -238,6 +297,12 @@ function tratarClique(ev) {
       ferirUi();
       break;
     case 'pip': pipUi(btn); break;
+    case 'slot': slotUi(btn); break;
+    case 'slot-cancelar': sel = null; render(); break;
+    case 'slot-cartas': if (sel) { const a = sel; sel = null; render(); abrirCartas(a); } break;
+    case 'slot-descartar': if (sel) { alvoCartas = { area: sel.area, i: sel.i }; porUi(null); } break;
+    case 'slot-esvaziar': porUi(null); break;
+    case 'por-carta': porUi({ equipId: btn.dataset.equip }); break;
     case 'novo-turno':
       mudar(novoTurno, 'Novo turno · ações de volta', { iconeId: 'i-turno' });
       break;
@@ -272,6 +337,7 @@ function tratarClique(ev) {
       break;
     }
     case 'desfazer': {
+      sel = null;
       const f = api.desfazer();
       clearTimeout(timerToast);
       if (f && tela !== 'ficha' && api.fichaAtual()) tela = 'ficha';
@@ -310,7 +376,27 @@ app.addEventListener('click', tratarClique);
 folha.addEventListener('click', tratarClique);
 toastEl.addEventListener('click', tratarClique);
 fundo.addEventListener('click', fecharFolha);
-document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') fecharFolha(); });
+document.addEventListener('keydown', (ev) => {
+  if (ev.key !== 'Escape') return;
+  if (folhaAtual) fecharFolha();
+  else if (sel) { sel = null; render(); }
+});
+
+folha.addEventListener('input', (ev) => {
+  const el = ev.target;
+  if (el.dataset?.busca !== 'cartas') return;
+  termoCartas = el.value;
+  const lista = folha.querySelector('#lista-cartas');
+  if (lista) lista.innerHTML = listaCartas({ cartas: EQUIPAMENTOS, termo: termoCartas });
+});
+
+folha.addEventListener('submit', (ev) => {
+  const form = ev.target.closest('[data-form="texto-livre"]');
+  if (!form) return;
+  ev.preventDefault();
+  const texto = String(new FormData(form).get('texto') ?? '');
+  porUi(texto.trim() ? { texto } : null);
+});
 
 folha.addEventListener('change', (ev) => {
   const el = ev.target;

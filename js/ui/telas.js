@@ -2,6 +2,9 @@
 // Cada botão leva data-acao="..." (e dados extras), tratado por delegação em app.js.
 import { esc, icone, barraPerigo, NOME_NIVEL, NOME_ACAO } from './dom.js';
 import { resumo, iniciais } from './logica.js';
+import {
+  slotsDaFicha, nomeDoSlot, nomeNoSlot, atributosCarta, buscarCartas, mesmoSlot, NOME_TIPO_CARTA, MAX_TEXTO,
+} from './inventario.js';
 
 const TIPO = { adulto: 'Adulto', kid: 'Kid' };
 
@@ -28,7 +31,7 @@ function topoSimples(titulo, { voltar, direita = '' } = {}) {
 
 // ---------- Ficha ----------
 
-export function telaFicha({ ficha, sobrevivente, habilidades, fichasDaMesa = [], sobreviventes = {} }) {
+export function telaFicha({ ficha, sobrevivente, habilidades, fichasDaMesa = [], sobreviventes = {}, equipamentos = {}, selecionado = null }) {
   const r = resumo(ficha, sobrevivente, habilidades);
   const nome = esc(sobrevivente?.nome ?? ficha.sobreviventeId);
 
@@ -135,13 +138,110 @@ export function telaFicha({ ficha, sobrevivente, habilidades, fichasDaMesa = [],
         </div>
       </div>
     </article>
-    <!-- U3: inventário (2 mãos + 3 mochila, +2 com Hoard) entra aqui -->
+    ${inventario(ficha, r.hoard, equipamentos, selecionado)}
   </main>
   <nav class="barra-xp" aria-label="Adrenalina">
     <button class="btn btn-icone btn-grande" type="button" data-acao="xp" data-delta="-1" aria-label="Tirar 1 XP">${icone('i-menos')}</button>
     <button class="btn btn-grande btn-aviso cresce" type="button" data-acao="xp" data-delta="1">${icone('i-mais')}1 XP</button>
     <button class="btn btn-grande btn-sangue cresce" type="button" data-acao="xp" data-delta="5">${icone('i-mais')}5 XP</button>
   </nav>`;
+}
+
+// ---------- Inventário ----------
+
+const ICONE_TIPO = { corpo: 'i-corpo', distancia: 'i-mira', ambos: 'i-mira', item: 'i-mochila' };
+
+function statsCarta(e) {
+  if (!e || e.tipo === 'item') return '';
+  const quais = ['dados', 'precisao', 'dano'];
+  const itens = atributosCarta(e).filter((a) => quais.includes(a.id))
+    .map((a) => `<span title="${a.rotulo}">${icone(a.icone)}${esc(a.valor)}</span>`).join('');
+  return `<span class="slot__stats">${itens}</span>`;
+}
+
+function botaoSlot(ficha, area, i, slot, equipamentos, selecionado) {
+  const ref = { area, i };
+  const nomeSlot = nomeDoSlot(ref);
+  const sel = mesmoSlot(selecionado, ref);
+  const dados = `data-acao="slot" data-area="${area}" data-i="${i}"`;
+  const tipoMao = area === 'maos' ? ' data-tipo="mao"' : '';
+  if (!slot) {
+    const rot = selecionado ? `Mover para ${nomeSlot.toLowerCase()} (vazio)` : `${nomeSlot}: vazio. Toque para pôr carta.`;
+    return `<button class="slot slot--vazio${selecionado ? ' slot--destino' : ''}" type="button" ${dados}${tipoMao} aria-label="${esc(rot)}">
+      <span class="slot__rotulo">${icone(area === 'maos' ? 'i-mao' : 'i-mochila')}${esc(nomeSlot)}</span>
+      <span class="slot__nome">${icone(selecionado ? 'i-mao' : 'i-mais')}${selecionado ? 'Aqui' : 'Vazio'}</span></button>`;
+  }
+  const nome = nomeNoSlot(slot, equipamentos);
+  const e = 'equipId' in slot ? equipamentos[slot.equipId] : null;
+  const rotulo = 'texto' in slot ? 'Anotação' : (NOME_TIPO_CARTA[e?.tipo] ?? 'Carta');
+  const classe = ['slot', e?.epico ? 'slot--epico' : '', sel ? 'slot--selecionado' : '', selecionado && !sel ? 'slot--destino' : '']
+    .filter(Boolean).join(' ');
+  const acaoTexto = sel ? 'selecionada; toque de novo para cancelar'
+    : (selecionado ? 'toque para trocar com a selecionada' : 'toque para mover ou trocar');
+  return `<button class="${classe}" type="button" ${dados}${tipoMao} aria-pressed="${sel}" aria-label="${esc(`${nomeSlot}: ${nome}, ${acaoTexto}`)}">
+    <span class="slot__rotulo">${icone(e ? ICONE_TIPO[e.tipo] ?? 'i-mochila' : 'i-config')}${esc(nomeSlot)} · ${esc(rotulo)}</span>
+    <span class="slot__nome">${esc(nome)}</span>${statsCarta(e)}</button>`;
+}
+
+function inventario(ficha, hoard, equipamentos, selecionado) {
+  const s = slotsDaFicha(ficha, hoard);
+  const grade = (area, classe) => `<div class="grade-slots${classe}">${s[area].map((x, i) => botaoSlot(ficha, area, i, x, equipamentos, selecionado)).join('')}</div>`;
+  const todos = [...s.maos, ...s.mochila, ...(s.extra ?? [])];
+  const cheios = todos.filter(Boolean).length;
+  const barra = selecionado
+    ? `<div class="inv-barra" role="status">
+        <p class="inv-barra__dica">${icone('i-mao', 'icone--p')}Toque no destino para mover <b>${esc(nomeNoSlot(ficha.inventario?.[selecionado.area]?.[selecionado.i], equipamentos) ?? '')}</b></p>
+        <div class="linha linha--nowrap">
+          <button class="btn cresce" type="button" data-acao="slot-cartas">${icone('i-dado')}Trocar carta</button>
+          <button class="btn btn-sangue cresce" type="button" data-acao="slot-descartar">${icone('i-fechar')}Descartar</button>
+          <button class="btn btn-icone btn-fantasma" type="button" data-acao="slot-cancelar" aria-label="Cancelar">${icone('i-desfazer')}</button>
+        </div>
+      </div>`
+    : '<p class="dica">Toque numa carta e depois no destino para mover. Vazio: toque para pôr carta.</p>';
+  return `
+    <article class="cartao inventario">
+      <h2 class="cartao__titulo">${icone('i-mochila')}Inventário<span class="cartao__extra">${cheios} de ${todos.length}</span></h2>
+      <p class="rotulo inv-rotulo">${icone('i-mao', 'icone--p')}Mãos</p>
+      ${grade('maos', '')}
+      <p class="rotulo inv-rotulo">${icone('i-mochila', 'icone--p')}Mochila</p>
+      ${grade('mochila', ' grade-slots--3')}
+      ${s.extra ? `<p class="rotulo inv-rotulo">${icone('i-mochila', 'icone--p')}Hoard · conta como mochila${hoard ? '' : ' (sem Hoard ativo)'}</p>${grade('extra', '')}` : ''}
+      ${barra}
+    </article>`;
+}
+
+/** Só a lista de cartas da folha (redesenhada a cada letra da busca). */
+export function listaCartas({ cartas, termo }) {
+  const achadas = buscarCartas(cartas, termo);
+  if (!achadas.length) return '<p class="texto-suave">Nenhuma carta com esse nome. Use o texto livre abaixo.</p>';
+  return achadas.map((e) => {
+    const tags = [NOME_TIPO_CARTA[e.tipo], e.inicial ? 'Inicial' : '', e.epico ? 'Épico' : ''].filter(Boolean).join(' · ');
+    const attrs = atributosCarta(e).map((a) => `<span title="${a.rotulo}">${icone(a.icone, 'icone--p')}${esc(a.rotulo)} ${esc(a.valor)}</span>`).join('');
+    return `<button class="carta-opcao${e.epico ? ' carta-opcao--epico' : ''}" type="button" data-acao="por-carta" data-equip="${esc(e.id)}">
+      <span class="carta-opcao__nome">${esc(e.nome)}${tags ? `<small>${esc(tags)}</small>` : ''}</span>
+      <span class="carta-opcao__attrs">${attrs}</span></button>`;
+  }).join('');
+}
+
+export function folhaCartas({ alvo, slotAtual, cartas, termo = '' }) {
+  const texto = slotAtual && 'texto' in slotAtual ? slotAtual.texto : '';
+  return `
+    <div class="folha__titulo"><span id="folha-titulo">${esc(nomeDoSlot(alvo))}</span>
+      <button class="btn btn-icone btn-fantasma" type="button" data-acao="fechar-folha" aria-label="Fechar">${icone('i-fechar')}</button></div>
+    <div class="folha__opcoes">
+      <input class="campo" type="search" data-busca="cartas" value="${esc(termo)}" placeholder="Buscar carta (ex.: pistol)"
+        aria-label="Buscar carta" autocomplete="off" enterkeyhint="search">
+      <p class="texto-suave dica">Atributos com “—” ainda não foram conferidos nas cartas.</p>
+      <div class="lista-cartas" id="lista-cartas">${listaCartas({ cartas, termo })}</div>
+      <form class="pilha" data-form="texto-livre">
+        <label class="rotulo" for="texto-livre">Texto livre</label>
+        <div class="linha linha--nowrap">
+          <input class="campo cresce" id="texto-livre" name="texto" maxlength="${MAX_TEXTO}" value="${esc(texto)}" placeholder="Ex.: chave do carro" autocomplete="off">
+          <button class="btn btn-aviso" type="submit">${icone('i-mais')}Pôr</button>
+        </div>
+      </form>
+      ${slotAtual ? `<button class="btn btn-grande btn-fantasma" type="button" data-acao="slot-esvaziar">${icone('i-fechar')}Esvaziar ${esc(nomeDoSlot(alvo).toLowerCase())}</button>` : ''}
+    </div>`;
 }
 
 // ---------- Mesa (fichas da partida ativa) ----------

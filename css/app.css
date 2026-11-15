@@ -111,6 +111,31 @@ body[data-tela="ficha"] .rodape { padding-bottom: calc(var(--barra-xp) + 16px + 
 .interruptor span { display: grid; gap: 2px; }
 .interruptor small { color: var(--texto-suave); font-size: 15px; }
 
+/* ---------- inventário ---------- */
+.inv-rotulo { display: flex; align-items: center; gap: 6px; margin: 10px 0 6px; }
+.inventario .grade-slots > .slot { min-height: 96px; }
+.slot .slot__rotulo { flex-wrap: wrap; }
+.slot--selecionado { --fill: #4a3b0c; --line: var(--aviso); }
+.slot--selecionado .slot__rotulo { color: var(--aviso); }
+.slot--destino:not(.slot--selecionado) { --line: var(--texto-suave); }
+.slot--vazio.slot--destino::after { border-color: var(--aviso); }
+.inv-barra { display: grid; gap: 8px; margin-top: 12px; }
+.inv-barra__dica { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; color: var(--aviso); font-weight: 600; }
+.inv-barra .btn { padding-inline: 10px; font-size: 20px; }
+.inventario > .dica { margin-top: 10px; }
+.lista-cartas { display: grid; gap: 8px; }
+.carta-opcao {
+  display: grid; gap: 4px; width: 100%; min-height: var(--toque); padding: 10px 12px; text-align: left;
+  background: var(--papel-2); border: 2px solid var(--borda); color: var(--texto); cursor: pointer; touch-action: manipulation;
+}
+.carta-opcao:active { transform: translateY(1px); border-color: var(--aviso); }
+.carta-opcao--epico { border-color: var(--laranja); }
+.carta-opcao__nome { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-family: var(--fonte-titulo); font-size: 24px; letter-spacing: .03em; line-height: 1.05; }
+.carta-opcao__nome small { font: 600 13px/1.2 var(--fonte-texto); letter-spacing: .1em; text-transform: uppercase; color: var(--texto-suave); }
+.carta-opcao__attrs { display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 14px; color: var(--texto-suave); font-variant-numeric: tabular-nums; }
+.carta-opcao__attrs span { display: inline-flex; align-items: center; gap: 3px; }
+.carta-opcao__attrs .icone { width: 14px; height: 14px; }
+
 /* ---------- rodapé ---------- */
 .rodape {
   text-align: center; padding: 24px var(--gutter) calc(24px + env(safe-area-inset-bottom));
