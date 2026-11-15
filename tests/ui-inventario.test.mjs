@@ -86,7 +86,7 @@ test('busca de cartas ignora caixa e acento e pula a carta sem nome', () => {
 });
 
 test('atributos sem dado aparecem como "—", nunca chutados', () => {
-  const a = Object.fromEntries(atributosCarta(EQ.katana).map((x) => [x.id, x.valor]));
+  const a = Object.fromEntries(atributosCarta({ ...EQ.katana, dados: null, precisao: null }).map((x) => [x.id, x.valor]));
   assert.equal(a.dano, '1');
   assert.equal(a.barulho, 'não');
   assert.equal(a.dados, '—');
