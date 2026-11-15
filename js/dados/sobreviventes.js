@@ -7,6 +7,9 @@
 // Correção: no laranja de Tiger Sam o wiki dizia "+1 free Combat Action"; o ID Card diz "+1 Free Move Action"
 // (e o wiki repetia +1 free Combat no laranja e no vermelho). Ficou o que está no card.
 const CARD = 'https://raw.githubusercontent.com/Axiileszko/zombicide/HEAD/Zombicide/Assets/Resources/Characters/';
+// imagem (retrato) e card (ID Card): arte oficial © CMON, caminhos relativos à página (ver assets/oficial/LEIA-ME.md).
+// São opcionais: sem eles (ou se o arquivo faltar) a UI volta ao retrato de iniciais.
+const IMG = 'assets/oficial/sobreviventes/';
 
 function s(id, nome, card, tipo, vida, azul, amarelo, laranja, vermelho, confirmado) {
   return {
@@ -14,6 +17,8 @@ function s(id, nome, card, tipo, vida, azul, amarelo, laranja, vermelho, confirm
     habilidades: { azul: [azul], amarelo: [amarelo], laranja, vermelho },
     fonte: CARD + card + '.jpg',
     confirmado,
+    imagem: IMG + id + '-retrato.jpg',
+    card: IMG + id + '-card.jpg',
   };
 }
 

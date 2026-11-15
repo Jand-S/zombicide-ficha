@@ -8,7 +8,7 @@ import {
   telaInicial, desenharComRecuo, avisoDeSalvar, ferir, curar, gastarAcao, devolverAcao, novoTurno, mudarXp, mudarObjetivo, resumo,
 } from './logica.js';
 import {
-  telaFicha, telaMesa, telaPartidas, telaEscolher, folhaEscolha, folhaConfig, folhaCartas, listaCartas,
+  telaFicha, telaMesa, telaPartidas, telaEscolher, folhaEscolha, folhaConfig, folhaCartas, listaCartas, folhaIdCard,
   folhaCompartilhar,
 } from './telas.js';
 import { urlDaFicha, qrDoTexto, nomeBackup } from './compartilhar.js';
@@ -32,7 +32,7 @@ const fundo = document.getElementById('folha-fundo');
 const toastEl = document.getElementById('toast');
 
 let tela = 'escolher';
-let folhaAtual = null; // 'escolha' | 'config' | 'cartas' | null
+let folhaAtual = null; // 'escolha' | 'config' | 'cartas' | 'compartilhar' | 'card' | null
 let sel = null; // slot selecionado para mover: { area, i, fichaId }
 let alvoCartas = null; // slot que a folha de cartas vai preencher
 let termoCartas = '';
@@ -454,6 +454,7 @@ function tratarClique(ev) {
       break;
     }
     case 'abrir-config': abrirFolha('config', conteudoConfig()); break;
+    case 'ver-card': abrirFolha('card', folhaIdCard({ sobrevivente: sobAtual() })); break;
     case 'abrir-compartilhar': abrirCompartilhar(); break;
     case 'copiar-link': copiarLink(); break;
     case 'enviar-link': enviarLink(); break;

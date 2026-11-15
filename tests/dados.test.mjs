@@ -3,6 +3,10 @@ import assert from 'node:assert/strict';
 import { HABILIDADES } from '../js/dados/habilidades.js';
 import { SOBREVIVENTES } from '../js/dados/sobreviventes.js';
 import { EQUIPAMENTOS } from '../js/dados/equipamentos.js';
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
+const RAIZ = fileURLToPath(new URL('..', import.meta.url));
 
 const repetidos = (lista) => lista.filter((x, i) => lista.indexOf(x) !== i);
 
@@ -117,4 +121,23 @@ test('equipamentos: todos os campos do contrato, com valores válidos ou null', 
     assert.equal(typeof e.fonte, 'string', e.id);
     assert.equal(typeof e.confirmado, 'boolean', e.id);
   }
+});
+
+test('imagens oficiais: todo imagem/card é caminho relativo e o arquivo existe', () => {
+  const campos = [
+    ...SOBREVIVENTES.flatMap((s) => [['imagem', s], ['card', s]]),
+    ...EQUIPAMENTOS.map((e) => ['imagem', e]),
+  ];
+  let usados = 0;
+  for (const [campo, x] of campos) {
+    if (x[campo] === undefined) continue; // opcional
+    usados++;
+    const c = x[campo];
+    assert.equal(typeof c, 'string', `${x.id}.${campo}`);
+    assert.match(c, /^assets\/oficial\/[a-z0-9/-]+\.(jpg|png)$/, `${x.id}.${campo}: relativo, dentro de assets/oficial`);
+    assert.ok(existsSync(RAIZ + c), `${x.id}.${campo}: não existe ${c}`);
+  }
+  // os 12 têm retrato e ID Card
+  for (const s of SOBREVIVENTES) assert.ok(s.imagem && s.card, s.id);
+  assert.ok(usados >= 24);
 });
