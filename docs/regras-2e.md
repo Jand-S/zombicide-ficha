@@ -45,7 +45,8 @@ com o leg `dados`.
 ## Caixa base
 - 12 sobreviventes (6 adultos e 6 Kids): Ostara, Lili, Tiger Sam, Odin, Bunny G, Lou, Josh, Doug, Elle, Amy,
   Ned, Wanda.
-- Equipamentos, 63 cartas:
+- Equipamentos, 63 cartas segundo o rulebook. A lista abaixo soma 62, e a 63ª carta ainda não foi identificada
+  (em js/dados ela aparece como `carta-nao-identificada`):
   - Iniciais: Baseball Bat, Crowbar, Fire Axe, Pistol ×3.
   - Pilha: Aaahh!! ×4, Bag of Rice ×2, Canned Food ×2, Chainsaw ×2, Crowbar, Fire Axe, Flashlight ×2,
     Katana ×2, Kukri ×2, Machete ×4, Molotov ×4, Pistol, Plenty of Bullets ×3, Plenty of Shells ×3,

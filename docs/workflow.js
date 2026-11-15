@@ -236,8 +236,9 @@ async function integrar(legs, fase) {
   if (!legs.length) return
   const r = await agent(pInteg(legs), { label: `integrar:${legs.join(',')}`, phase: fase, schema: INTEG, model: 'sonnet', effort: 'low' })
   if (!r) { for (const l of legs) status[l] = 'parado: integrador falhou'; return }
-  for (const l of r.integradas) if (legs.includes(l)) status[l] = 'integrada'
-  for (const x of r.revertidas) if (legs.includes(x.leg)) status[x.leg] = `parado: revertida (${x.motivo})`
+  const nome = (s) => String(s).trim().replace(/^leg\//, '') // o integrador às vezes devolve "leg/<nome>"
+  for (const l of r.integradas.map(nome)) if (legs.includes(l)) status[l] = 'integrada'
+  for (const x of r.revertidas) if (legs.includes(nome(x.leg))) status[nome(x.leg)] = `parado: revertida (${x.motivo})`
   relatorio[`integracao_${fase}`] = r
 }
 

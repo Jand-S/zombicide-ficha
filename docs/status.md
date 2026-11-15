@@ -1,6 +1,7 @@
 # Lista de trabalho do workflow (fonte da verdade)
 
 Cada leg lê só a sua seção, a seção "Contratos" e `docs/regras-2e.md`.
+Situação em 15/11/2026: os 4 legs foram integrados, mais a rodada de correções da auditoria (leg/auditoria).
 Status de um leg: `pendente` | `em_andamento` | `integrada` | `parado: <motivo>`.
 
 ## Contratos (todos os legs respeitam; mudar exige parar e avisar)
@@ -36,6 +37,7 @@ Status de um leg: `pendente` | `em_andamento` | `integrada` | `parado: <motivo>`
     `desfazer()`, `exportarLink(fichaId)` (devolve um `#f=` com base64url), `importarLink(hash)`,
     `exportarJSON()`, `importarJSON(txt)`, `migrar(estadoAntigo)`.
   - A chave do localStorage é `zombicide-ficha:v1`.
+  - Acréscimos (já integrados): `criarEstado(storage, catalogo)` com `{ habilidades, sobreviventes }` opcional, para validar e limitar o que vem de link, JSON ou storage; `abrirFicha(id)`; `recarregar()` (evento `storage` de outra aba); `pendente` (só grava quando há mudança); e `salvar()` mescla ficha a ficha com o que outra aba gravou.
 - **`css/tema.css`:**
   - Tokens em `:root`: `--azul`, `--amarelo`, `--laranja`, `--vermelho`, `--sangue`, `--aviso`, `--fundo`,
     `--papel`, `--texto`, `--toque: 48px`.
