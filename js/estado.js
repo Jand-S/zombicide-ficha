@@ -294,6 +294,19 @@ export function criarEstado(storage = storagePadrao()) {
       return p;
     },
 
+    /** Deixa ativa a ficha `id` (e a partida dela). Devolve a ficha, ou null se não existir. */
+    abrirFicha(id) {
+      for (const p of estado.partidas) {
+        const f = p.fichas.find((x) => x.id === id);
+        if (!f) continue;
+        estado.partidaAtiva = p.id;
+        estado.fichaAtiva = f.id;
+        api.salvar();
+        return f;
+      }
+      return null;
+    },
+
     /** Põe uma ficha nova na partida ativa (cria uma partida se não houver) e a deixa ativa. */
     adicionarFicha(sobreviventeId) {
       if (typeof sobreviventeId !== 'string' || !sobreviventeId) return null;

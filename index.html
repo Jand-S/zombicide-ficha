@@ -1,7 +1,30 @@
 <!doctype html>
 <html lang="pt-BR">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Ficha do 7º jogador · Zombicide</title></head>
-<body style="font-family:system-ui,sans-serif;background:#1b1b1b;color:#eee;display:grid;place-items:center;min-height:100vh;margin:0;padding:16px;text-align:center">
-<main><h1>Ficha do 7º jogador</h1><p>Em construção.</p></main>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#121110">
+<meta name="description" content="Ficha interativa de sobrevivente do Zombicide 2ª edição para o celular. Ficha de fã, não oficial.">
+<title>Ficha do 7º · Zombicide</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/app/icone.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/app/icone-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ficha Z">
+<link rel="stylesheet" href="css/tema.css">
+<link rel="stylesheet" href="css/app.css">
+<script defer src="vendor/qrcode-generator-1.4.4.min.js"></script>
+<script type="module" src="js/ui/app.js"></script>
+</head>
+<body data-tela="carregando">
+<div id="app" class="app">
+  <noscript><main class="pagina"><p>A ficha precisa de JavaScript ligado.</p></main></noscript>
+</div>
+
+<footer class="rodape">ficha de fã, não oficial</footer>
+
+<div class="folha-fundo" id="folha-fundo"></div>
+<div class="folha" id="folha" role="dialog" aria-modal="true" aria-labelledby="folha-titulo" aria-hidden="true"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>
