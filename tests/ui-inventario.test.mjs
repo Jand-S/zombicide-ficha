@@ -86,7 +86,7 @@ test('busca de cartas ignora caixa e acento e pula a carta sem nome', () => {
 });
 
 test('atributos sem dado aparecem como "—", nunca chutados', () => {
-  const a = Object.fromEntries(atributosCarta(EQ.katana).map((x) => [x.id, x.valor]));
+  const a = Object.fromEntries(atributosCarta({ ...EQ.katana, dados: null, precisao: null }).map((x) => [x.id, x.valor]));
   assert.equal(a.dano, '1');
   assert.equal(a.barulho, 'não');
   assert.equal(a.dados, '—');
@@ -131,4 +131,22 @@ test('folha de cartas tem busca, atributos, texto livre e esvaziar', () => {
   const so = listaCartas({ cartas: EQUIPAMENTOS, termo: 'machete' });
   assert.equal(contar(so, /data-acao="por-carta"/g), 1);
   assert.doesNotMatch(folhaCartas({ alvo: MAO1, slotAtual: null, cartas: EQUIPAMENTOS }), /slot-esvaziar/);
+});
+
+test('carta com dois perfis mostra os números de cada modo', async () => {
+  const { perfisDaCarta } = await import('../js/ui/inventario.js');
+  const { listaCartas } = await import('../js/ui/telas.js');
+  const g = EQ.gunblade;
+  const perfis = perfisDaCarta(g);
+  assert.deepEqual(perfis.map((p) => p.rotulo), ['Corpo a corpo', 'Distância']);
+  const corpo = Object.fromEntries(atributosCarta(perfis[0].carta).map((x) => [x.id, x.valor]));
+  const dist = Object.fromEntries(atributosCarta(perfis[1].carta).map((x) => [x.id, x.valor]));
+  assert.deepEqual([corpo.dados, corpo.precisao, corpo.dano, corpo.alcance], ['4', '4+', '2', '0–0']);
+  assert.deepEqual([dist.dados, dist.alcance, dist.barulho], ['2', '0–1', 'sim']);
+  const html = listaCartas({ cartas: [g], termo: '' });
+  assert.match(html, /Corpo a corpo/);
+  assert.match(html, /Distância/);
+  assert.doesNotMatch(html, /Dados —/);
+  // carta de um perfil só continua com uma linha, sem rótulo de modo
+  assert.deepEqual(perfisDaCarta(EQ.katana).map((p) => p.rotulo), [null]);
 });

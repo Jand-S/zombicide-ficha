@@ -3,7 +3,7 @@
 import { esc, icone, barraPerigo, NOME_NIVEL, NOME_ACAO } from './dom.js';
 import { resumo, iniciais } from './logica.js';
 import {
-  slotsDaFicha, nomeDoSlot, nomeNoSlot, atributosCarta, buscarCartas, mesmoSlot, NOME_TIPO_CARTA, MAX_TEXTO,
+  slotsDaFicha, nomeDoSlot, nomeNoSlot, atributosCarta, perfisDaCarta, buscarCartas, mesmoSlot, NOME_TIPO_CARTA, MAX_TEXTO,
 } from './inventario.js';
 
 const TIPO = { adulto: 'Adulto', kid: 'Kid' };
@@ -18,8 +18,21 @@ function selo(conferir) {
     : '';
 }
 
-function retrato(sob, nivel, classe = '') {
-  return `<div class="retrato${classe ? ' ' + classe : ''}" data-nivel="${nivel}" aria-hidden="true"><span>${esc(iniciais(sob?.nome))}</span></div>`;
+// Imagem opcional (arte oficial). Se faltar ou der erro (onerror), some e fica o visual próprio por baixo.
+function imagem(src, { lazy = false, classe = '', largura, altura, alt = '', aoFalhar = 'this.remove()' } = {}) {
+  if (typeof src !== 'string' || !src) return '';
+  const dims = largura && altura ? ` width="${largura}" height="${altura}"` : '';
+  return `<img${classe ? ` class="${classe}"` : ''} src="${esc(src)}" alt="${esc(alt)}"${dims}${lazy ? ' loading="lazy"' : ''} decoding="async" onerror="${aoFalhar}">`;
+}
+
+function retrato(sob, nivel, classe = '', { lazy = false } = {}) {
+  const foto = imagem(sob?.imagem, { lazy, classe: 'retrato__img', largura: 192, altura: 192 });
+  return `<div class="retrato${classe ? ' ' + classe : ''}" data-nivel="${nivel}" aria-hidden="true"><span>${esc(iniciais(sob?.nome))}</span>${foto}</div>`;
+}
+
+/** Miniatura da carta sobre o ícone do tipo: sem imagem (ou com erro) fica só o ícone. */
+function miniCarta(e, { lazy = false } = {}) {
+  return `<span class="mini-carta" aria-hidden="true">${icone(ICONE_TIPO[e?.tipo] ?? 'i-mochila')}${imagem(e?.imagem, { lazy, largura: 360, altura: 552 })}</span>`;
 }
 
 function topoSimples(titulo, { voltar, direita = '' } = {}) {
@@ -88,6 +101,9 @@ export function telaFicha({ ficha, sobrevivente, habilidades, fichasDaMesa = [],
   <header class="topo topo-ficha">
     <div class="topo-ficha__linha">
       <button class="btn btn-icone btn-fantasma" type="button" data-acao="ir" data-tela="mesa" aria-label="Mesa (todas as fichas)">${icone('i-mesa')}</button>
+      ${sobrevivente?.card
+    ? `<button class="retrato-btn" type="button" data-acao="ver-card" aria-label="Ver ID Card de ${nome}">${retrato(sobrevivente, r.nivel, 'retrato--topo')}</button>`
+    : retrato(sobrevivente, r.nivel, 'retrato--topo')}
       <div class="topo-ficha__nome">
         <h1 class="topo__titulo">${nome}</h1>
         <span class="chip-nivel" data-nivel="${r.nivel}"><span class="chip-nivel__nivel">${NOME_NIVEL[r.nivel]}</span></span>
@@ -154,8 +170,8 @@ const ICONE_TIPO = { corpo: 'i-corpo', distancia: 'i-mira', ambos: 'i-mira', ite
 function statsCarta(e) {
   if (!e || e.tipo === 'item') return '';
   const quais = ['dados', 'precisao', 'dano'];
-  const itens = atributosCarta(e).filter((a) => quais.includes(a.id))
-    .map((a) => `<span title="${a.rotulo}">${icone(a.icone)}${esc(a.valor)}</span>`).join('');
+  const itens = perfisDaCarta(e).map(({ carta }) => atributosCarta(carta).filter((a) => quais.includes(a.id))
+    .map((a) => `<span title="${a.rotulo}">${icone(a.icone)}${esc(a.valor)}</span>`).join('')).join('<span aria-hidden="true">/</span>');
   return `<span class="slot__stats">${itens}</span>`;
 }
 
@@ -181,7 +197,7 @@ function botaoSlot(ficha, area, i, slot, equipamentos, selecionado) {
   const acaoTexto = sel ? 'selecionada; toque de novo para cancelar'
     : (selecionado ? 'toque para trocar com a selecionada' : 'toque para mover ou trocar');
   return `<button class="${classe}" type="button" ${dados}${tipoMao} aria-pressed="${sel}" aria-label="${esc(`${nomeSlot}: ${nome}, ${acaoTexto}`)}">
-    <span class="slot__rotulo">${icone(e ? ICONE_TIPO[e.tipo] ?? 'i-mochila' : 'i-config')}${esc(curto)} · ${esc(rotulo)}</span>
+    ${e?.imagem ? `<span class="slot__arte" aria-hidden="true">${imagem(e.imagem, { lazy: true, largura: 360, altura: 552 })}</span>` : ''}<span class="slot__rotulo">${icone(e ? ICONE_TIPO[e.tipo] ?? 'i-mochila' : 'i-config')}${esc(curto)} · ${esc(rotulo)}</span>
     <span class="slot__nome">${esc(nome)}</span>${statsCarta(e)}</button>`;
 }
 
@@ -218,9 +234,10 @@ export function listaCartas({ cartas, termo }) {
   if (!achadas.length) return '<p class="texto-suave">Nenhuma carta com esse nome. Use o texto livre abaixo.</p>';
   return achadas.map((e) => {
     const tags = [NOME_TIPO_CARTA[e.tipo], e.inicial ? 'Inicial' : '', e.epico ? 'Épico' : ''].filter(Boolean).join(' · ');
-    const attrs = e.tipo === 'item' ? '' : atributosCarta(e).map((a) => `<span title="${a.rotulo}">${icone(a.icone, 'icone--p')}${esc(a.rotulo)} ${esc(a.valor)}</span>`).join('');
+    const attrs = e.tipo === 'item' ? '' : perfisDaCarta(e).map(({ rotulo, carta }) => (rotulo ? `<span><b>${esc(rotulo)}</b></span>` : '')
+      + atributosCarta(carta).map((a) => `<span title="${a.rotulo}">${icone(a.icone, 'icone--p')}${esc(a.rotulo)} ${esc(a.valor)}</span>`).join('')).join('');
     return `<button class="carta-opcao${e.epico ? ' carta-opcao--epico' : ''}" type="button" data-acao="por-carta" data-equip="${esc(e.id)}">
-      <span class="carta-opcao__nome">${esc(e.nome)}${tags ? `<small>${esc(tags)}</small>` : ''}</span>
+      ${miniCarta(e, { lazy: true })}<span class="carta-opcao__nome">${esc(e.nome)}${tags ? `<small>${esc(tags)}</small>` : ''}</span>
       ${attrs ? `<span class="carta-opcao__attrs">${attrs}</span>` : ''}</button>`;
   }).join('');
 }
@@ -251,7 +268,7 @@ export function telaMesa({ partida, sobreviventes, fichaAtiva }) {
     const r = resumo(f, s);
     const atual = f.id === fichaAtiva;
     return `<button class="cartao cartao-ficha${atual ? ' cartao-ficha--atual' : ''}" data-nivel="${r.nivel}" type="button" data-acao="abrir-ficha" data-id="${esc(f.id)}">
-      ${retrato(s, r.nivel)}
+      ${retrato(s, r.nivel, '', { lazy: true })}
       <span class="cartao-ficha__corpo">
         <span class="cartao-ficha__nome">${esc(s?.nome ?? f.sobreviventeId)}</span>
         <span class="linha" style="gap:6px">
@@ -326,7 +343,7 @@ export function telaPartidas({ partidas, partidaAtiva }) {
 export function telaEscolher({ sobreviventes, habilidades, temPartida }) {
   const cards = sobreviventes.map((s) => `
     <button class="cartao cartao-sobrevivente" type="button" data-acao="adicionar" data-id="${esc(s.id)}">
-      ${retrato(s, 'azul')}
+      ${retrato(s, 'azul', '', { lazy: true })}
       <span class="cartao-ficha__corpo">
         <span class="cartao-ficha__nome">${esc(s.nome)}</span>
         <span class="texto-suave">${esc(TIPO[s.tipo] ?? 'Tipo a conferir')} · ${esc(nomeHab(s.habilidades?.azul?.[0], habilidades) ?? '')}</span>
@@ -355,6 +372,22 @@ export function folhaEscolha({ escolha, habilidades, nomeSobrevivente }) {
       <button class="btn btn-icone btn-fantasma" type="button" data-acao="fechar-folha" aria-label="Escolher depois">${icone('i-fechar')}</button></div>
     <p class="texto-suave" style="margin-bottom:12px">${esc(nomeSobrevivente)}: escolha 1 habilidade${qtd > 1 ? ` de ${qtd}` : ''}.</p>
     <div class="folha__opcoes">${opcoes || '<p class="texto-suave">Não sobrou opção nos dados.</p>'}</div>`;
+}
+
+export function folhaIdCard({ sobrevivente }) {
+  const nome = esc(sobrevivente?.nome ?? 'Sobrevivente');
+  const img = imagem(sobrevivente?.card, {
+    largura: 600, altura: 518, alt: `ID Card de ${sobrevivente?.nome ?? ''}`,
+    aoFalhar: "this.parentNode.classList.add('id-card--sem')",
+  });
+  return `
+    <div class="folha__titulo"><span id="folha-titulo">${nome}</span>
+      <button class="btn btn-icone btn-fantasma" type="button" data-acao="fechar-folha" aria-label="Fechar">${icone('i-fechar')}</button></div>
+    <div class="folha__opcoes">
+      <div class="id-card${img ? '' : ' id-card--sem'}">${img}
+        <div class="id-card__falta">${retrato(sobrevivente, 'azul')}<span class="texto-suave">Sem a imagem do ID Card neste aparelho.</span></div></div>
+      <p class="texto-suave dica">ID Card oficial · imagem © CMON</p>
+    </div>`;
 }
 
 export function folhaConfig({ ficha, sobrevivente, wakeLock, wakeLockSuportado }) {

@@ -6,7 +6,7 @@ import { HABILIDADES } from '../js/dados/habilidades.js';
 import { telaFicha, telaMesa, telaPartidas, telaEscolher, folhaEscolha } from '../js/ui/telas.js';
 
 const SOB = Object.fromEntries(SOBREVIVENTES.map((s) => [s.id, s]));
-const conferir = SOBREVIVENTES.find((s) => s.confirmado === false);
+const conferir = { ...SOBREVIVENTES[0], confirmado: false }; // exemplo: os dados reais já estão todos confirmados
 const confirmado = SOBREVIVENTES.find((s) => s.confirmado === true);
 
 function contar(html, re) {
