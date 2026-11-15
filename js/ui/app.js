@@ -24,7 +24,7 @@ const TEMPO_SEGURAR = 500;
 let storage = null;
 try { storage = globalThis.localStorage ?? null; } catch { /* bloqueado */ }
 
-const api = criarEstado(storage ?? undefined);
+const api = criarEstado(storage ?? undefined, { habilidades: HABILIDADES, sobreviventes: SOB });
 const prefs = criarPrefs(storage);
 const app = document.getElementById('app');
 const folha = document.getElementById('folha');
